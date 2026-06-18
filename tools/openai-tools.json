@@ -1,0 +1,93 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "add_norm",
+      "description": "Add a normative rule to the world constitution. Call this to define what agents are prohibited from doing under certain conditions.",
+      "strict": true,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Short identifier for the norm, e.g. 'no-attack-in-safe-zone'"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of what this norm prevents"
+          },
+          "condition": {
+            "type": "string",
+            "description": "Token(s) that must appear in the action context for this norm to apply, e.g. 'safe_zone'"
+          },
+          "prohibited": {
+            "type": "string",
+            "description": "The action verb(s) that are forbidden under this condition, e.g. 'attack'"
+          }
+        },
+        "required": ["name", "description", "condition", "prohibited"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "check_action",
+      "description": "Check whether an agent action violates any active norms in the world constitution. Returns a list of violations if any are found.",
+      "strict": true,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "description": "Unique identifier of the agent taking the action"
+          },
+          "action": {
+            "type": "string",
+            "description": "The action being taken, e.g. 'attack', 'steal', 'trade'"
+          },
+          "location": {
+            "type": "string",
+            "description": "The location where the action takes place, e.g. 'safe_zone', 'market'"
+          }
+        },
+        "required": ["agent_id", "action", "location"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "list_violations",
+      "description": "List all recorded norm violations. Use this to audit agent behavior and identify patterns of non-compliance.",
+      "strict": true,
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "get_norms",
+      "description": "Retrieve all active norms from the world constitution. Use this to inspect the current rules governing agent behavior.",
+      "strict": true,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "active_only": {
+            "type": "boolean",
+            "description": "If true, return only currently active norms; if false, return all norms including repealed ones"
+          }
+        },
+        "required": ["active_only"],
+        "additionalProperties": false
+      }
+    }
+  }
+]

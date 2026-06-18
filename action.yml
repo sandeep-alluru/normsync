@@ -1,0 +1,22 @@
+name: normsync
+description: "World constitution engine for norm-governed multi-agent games"
+inputs:
+  db:
+    description: "Path to the normsync database"
+    required: false
+    default: ".normsync/norms.db"
+  fail-on-violation:
+    description: "Fail if violations are found"
+    required: false
+    default: "true"
+runs:
+  using: "composite"
+  steps:
+    - name: Install normsync
+      shell: bash
+      run: pip install -e "${{ github.action_path }}"
+    - name: Check for violations
+      shell: bash
+      run: |
+        ARGS="--db ${{ inputs.db }}"
+        normsync status $ARGS
