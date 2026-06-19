@@ -98,9 +98,10 @@ def detect_norm_conflicts(
                             norm_b=norm_b.name,
                             conflict_type=ctype,
                             description=(
-                                f"Norms '{norm_a.name}' and '{norm_b.name}' share the same priority "
-                                f"({norm_a.priority}) and scope ('{norm_a.scope}') with overlapping "
-                                f"condition tokens {shared_cond!r} — resolution is ambiguous"
+                                f"Norms '{norm_a.name}' and '{norm_b.name}' share the same"
+                                f" priority ({norm_a.priority}) and scope ('{norm_a.scope}')"
+                                f" with overlapping condition tokens {shared_cond!r}"
+                                " — resolution is ambiguous"
                             ),
                             example_action=(
                                 "action='{}' in condition='{}'".format(
