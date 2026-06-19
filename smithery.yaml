@@ -1,0 +1,19 @@
+name: normsync
+displayName: "NormSync"
+description: "World constitution engine — norm-governed behavior contracts for multi-agent games"
+license: MIT
+homepage: https://github.com/sandeep-alluru/normsync
+repository: https://github.com/sandeep-alluru/normsync
+keywords:
+  - ai-agents
+  - multi-agent
+  - norms
+  - game-ai
+  - mcp
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction: |-
+    (config) => ({ command: "python", args: ["-m", "normsync.mcp_server"] })
