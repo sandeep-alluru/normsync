@@ -2,8 +2,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from normsync.store import NormStore
+if TYPE_CHECKING:
+    from normsync.store import NormStore
+
+from normsync.norm import WorldNorm
 
 
 @dataclass
@@ -20,9 +24,19 @@ def _tokens(text: str) -> set[str]:
     return {t for t in text.lower().split() if t}
 
 
-def detect_norm_conflicts(store: NormStore) -> list[NormConflict]:
-    """Find norms that may contradict each other."""
-    norms = store.get_norms(active_only=True)
+def detect_norm_conflicts(
+    store: "list[WorldNorm] | NormStore",
+) -> list[NormConflict]:
+    """Find norms that may contradict each other.
+
+    Args:
+        store: Either a list of WorldNorm objects or a NormStore instance.
+               If a NormStore is given, active norms are fetched via .get_norms().
+    """
+    if isinstance(store, list):
+        norms: list[WorldNorm] = store
+    else:
+        norms = store.get_norms(active_only=True)
     conflicts: list[NormConflict] = []
     # Track (pair, conflict_type) to avoid duplicates
     seen: set[tuple[frozenset[str], str]] = set()

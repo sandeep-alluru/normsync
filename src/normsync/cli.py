@@ -11,7 +11,7 @@ from rich.table import Table
 from normsync.compliance import agent_compliance_report
 from normsync.conflicts import detect_norm_conflicts
 from normsync.monitor import NormMonitor
-from normsync.norm import AgentAction, WorldNorm
+from normsync.norm import AgentAction, NormRevision, WorldNorm
 from normsync.report import print_violations, to_json, to_markdown
 from normsync.store import NormStore
 
@@ -56,6 +56,12 @@ def add_norm(
     monitor = NormMonitor(store.get_norms())
     monitor.add_norm(norm)
     store.save_norm(norm)
+    store.save_revision(NormRevision(
+        norm_id=norm.id,
+        revision_type="add",
+        reason="norm added via CLI",
+        timestamp=time.time(),
+    ))
     console.print(f"[green]Added norm:[/green] {norm.name} (id={norm.id})")
     store.close()
 

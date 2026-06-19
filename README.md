@@ -72,7 +72,7 @@ Matching is token-based and case-insensitive: condition tokens must appear in th
 | CLI | `normsync add`, `check`, `violations`, `revisions`, `status` |
 | JSON output | Machine-readable reports for downstream automation |
 | Markdown output | Ready-to-paste GitHub PR comments |
-| 46 tests | Comprehensive test suite covering all layers |
+| 118 tests | Comprehensive test suite covering all layers |
 
 ---
 
@@ -83,7 +83,7 @@ pip install normsync
 ```
 
 ```python
-from normsync import NormMonitor, NormStore, WorldNorm, AgentAction, print_violations
+from normsync import NormMonitor, WorldNorm, AgentAction, print_violations
 
 # Define world norms
 monitor = NormMonitor()
@@ -103,6 +103,59 @@ print_violations(violations)
 
 # Repeal a norm at runtime
 monitor.repeal_norm(monitor.active_norms()[0].id)
+```
+
+**With SQLite persistence** — use `NormStore` to persist norms and violations across sessions, and `NormMonitor` to check actions against the stored constitution:
+
+```python
+from normsync import NormStore, NormMonitor, NormRevision, WorldNorm, AgentAction, print_violations
+import time
+
+# Persist norms to SQLite (single file, shareable between agents)
+store = NormStore(".normsync/norms.db")
+norm = WorldNorm(
+    name="no-attack-in-safe-zone",
+    description="Attacking is prohibited in safe zones",
+    condition="safe_zone",
+    prohibited="attack",
+)
+store.save_norm(norm)
+store.save_revision(NormRevision(norm_id=norm.id, revision_type="add", timestamp=time.time()))
+
+# Load active norms into monitor and check actions
+monitor = NormMonitor(store.get_norms(active_only=True))
+action = AgentAction("hero", "attack", "safe_zone")
+violations = monitor.check(action)
+for v in violations:
+    store.save_violation(v)
+
+print_violations(violations)
+# → Norm Violations table: hero | no-attack-in-safe-zone | ...
+
+store.close()
+```
+
+**Track full norm history** with `NormVersionStore`:
+
+```python
+from normsync import NormStore, NormVersionStore, WorldNorm
+
+store = NormStore(".normsync/norms.db")
+version_store = NormVersionStore(store)
+
+norm = WorldNorm(
+    name="no-friendly-fire",
+    description="Friendly fire is prohibited",
+    condition="friendly",
+    prohibited="attack",
+)
+store.save_norm(norm)
+v1 = version_store.record_change(norm, changed_by="admin", reason="initial rule")
+
+# Retrieve full version history
+history = version_store.get_history("no-friendly-fire")
+print(f"Version {history[0].version} by {history[0].changed_by}: {history[0].change_reason}")
+store.close()
 ```
 
 ---
@@ -207,6 +260,9 @@ Once connected, Claude can call `normsync/add_norm`, `normsync/check_action`, an
 normsync exposes a FastAPI REST server compatible with OpenAI's function-calling format. The tool definitions are in [`tools/openai-tools.json`](tools/openai-tools.json) and the full API spec is in [`openapi.yaml`](openapi.yaml).
 
 ```bash
+# Install with REST API dependencies
+pip install 'normsync[api]'
+
 # Start the REST server
 uvicorn normsync.api:app --reload
 

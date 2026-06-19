@@ -74,6 +74,6 @@ def to_markdown(
         ]
         for v in violations:
             lines.append(
-                f"| {v.agent_id} | {v.norm_name} | {v.description[:50]} | {v.severity} |"
+                f"| {v.agent_id} | {v.norm_name} | {v.description} | {v.severity} |"
             )
     return "\n".join(lines)
