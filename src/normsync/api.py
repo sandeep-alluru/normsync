@@ -4,6 +4,7 @@ Start:   uvicorn normsync.api:app --reload
 Install: pip install "normsync[api]"
 Docs:    http://localhost:8000/docs
 """
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -86,7 +87,7 @@ class ViolationResponse(BaseModel):
 
 
 @app.get("/health", response_model=HealthResponse)
-async def health() -> dict:
+async def health() -> dict[str, Any]:
     """Liveness probe."""
     from normsync import __version__
 
@@ -94,7 +95,7 @@ async def health() -> dict:
 
 
 @app.post("/norm", response_model=NormResponse)
-async def add_norm(req: NormRequest) -> dict:
+async def add_norm(req: NormRequest) -> dict[str, Any]:
     """Add a new norm to the constitution."""
     norm = WorldNorm(
         name=req.name,
@@ -110,13 +111,13 @@ async def add_norm(req: NormRequest) -> dict:
 
 
 @app.get("/norms")
-async def list_norms() -> list[dict]:
+async def list_norms() -> list[dict[str, Any]]:
     """List all norms."""
     return [n.to_dict() for n in _store.get_norms()]
 
 
 @app.post("/check")
-async def check_action(req: CheckRequest) -> dict:
+async def check_action(req: CheckRequest) -> dict[str, Any]:
     """Check an action against active norms."""
     act = AgentAction(
         agent_id=req.agent_id,
@@ -137,6 +138,6 @@ async def check_action(req: CheckRequest) -> dict:
 
 
 @app.get("/violations")
-async def list_violations() -> list[dict]:
+async def list_violations() -> list[dict[str, Any]]:
     """List all recorded violations."""
     return [v.to_dict() for v in _store.get_violations()]

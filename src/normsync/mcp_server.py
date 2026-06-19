@@ -12,6 +12,7 @@ Add to Claude Desktop (~/.config/claude/claude_desktop_config.json):
         }
     }
 """
+
 from __future__ import annotations
 
 import sys
@@ -89,9 +90,7 @@ def run_server() -> None:
         ]
 
     @server.call_tool()
-    async def call_tool(
-        name: str, arguments: dict[str, Any]
-    ) -> list[_mcp_types.TextContent]:
+    async def call_tool(name: str, arguments: dict[str, Any]) -> list[_mcp_types.TextContent]:
         if name == "add_norm":
             norm = WorldNorm(
                 name=arguments["name"],
@@ -137,9 +136,7 @@ def run_server() -> None:
 
     async def _main() -> None:
         async with _mcp_stdio.stdio_server() as (read_stream, write_stream):
-            await server.run(
-                read_stream, write_stream, server.create_initialization_options()
-            )
+            await server.run(read_stream, write_stream, server.create_initialization_options())
 
     asyncio.run(_main())
 

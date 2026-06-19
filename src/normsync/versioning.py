@@ -1,4 +1,5 @@
 """Norm versioning — track the full history of norm changes."""
+
 from __future__ import annotations
 
 import json
@@ -15,8 +16,8 @@ class NormVersion:
     norm_id: str
     norm_name: str
     version: int
-    changed_at: float       # timestamp
-    changed_by: str         # agent or human ID
+    changed_at: float  # timestamp
+    changed_by: str  # agent or human ID
     change_reason: str
     previous_version: int | None
 
@@ -90,15 +91,17 @@ class NormVersionStore:
         ).fetchall()
         result = []
         for r in rows:
-            result.append(NormVersion(
-                norm_id=r["norm_id"],
-                norm_name=r["norm_name"],
-                version=r["version"],
-                changed_at=r["changed_at"],
-                changed_by=r["changed_by"],
-                change_reason=r["change_reason"],
-                previous_version=r["previous_version"],
-            ))
+            result.append(
+                NormVersion(
+                    norm_id=r["norm_id"],
+                    norm_name=r["norm_name"],
+                    version=r["version"],
+                    changed_at=r["changed_at"],
+                    changed_by=r["changed_by"],
+                    change_reason=r["change_reason"],
+                    previous_version=r["previous_version"],
+                )
+            )
         return result
 
     def get_norm_at(self, norm_name: str, timestamp: float) -> WorldNorm | None:

@@ -1,4 +1,5 @@
 """Click CLI for normsync."""
+
 from __future__ import annotations
 
 import os
@@ -56,12 +57,14 @@ def add_norm(
     monitor = NormMonitor(store.get_norms())
     monitor.add_norm(norm)
     store.save_norm(norm)
-    store.save_revision(NormRevision(
-        norm_id=norm.id,
-        revision_type="add",
-        reason="norm added via CLI",
-        timestamp=time.time(),
-    ))
+    store.save_revision(
+        NormRevision(
+            norm_id=norm.id,
+            revision_type="add",
+            reason="norm added via CLI",
+            timestamp=time.time(),
+        )
+    )
     console.print(f"[green]Added norm:[/green] {norm.name} (id={norm.id})")
     store.close()
 
@@ -162,9 +165,7 @@ def list_revisions(db: str) -> None:
 def status(db: str) -> None:
     """Show normsync status."""
     if not os.path.exists(db):
-        console.print(
-            "[yellow]No database found. Run 'normsync add' to create one.[/yellow]"
-        )
+        console.print("[yellow]No database found. Run 'normsync add' to create one.[/yellow]")
         return
     store = NormStore(db)
     norms = store.get_norms()

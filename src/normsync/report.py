@@ -1,4 +1,5 @@
 """Report formatters for normsync."""
+
 from __future__ import annotations
 
 import json
@@ -10,9 +11,7 @@ from rich.table import Table
 from normsync.norm import NormViolation, WorldNorm
 
 
-def print_violations(
-    violations: list[NormViolation], console: Console | None = None
-) -> None:
+def print_violations(violations: list[NormViolation], console: Console | None = None) -> None:
     """Print violations as a Rich table."""
     con = console or Console()
     if not violations:
@@ -62,9 +61,7 @@ def to_markdown(
             "|------|-------|-----------|-----------|--------|",
         ]
         for n in norms:
-            lines.append(
-                f"| {n.name} | {n.scope} | {n.condition} | {n.prohibited} | {n.active} |"
-            )
+            lines.append(f"| {n.name} | {n.scope} | {n.condition} | {n.prohibited} | {n.active} |")
         lines.append("")
     if violations:
         lines += [
@@ -73,7 +70,5 @@ def to_markdown(
             "|-------|------|-------------|----------|",
         ]
         for v in violations:
-            lines.append(
-                f"| {v.agent_id} | {v.norm_name} | {v.description} | {v.severity} |"
-            )
+            lines.append(f"| {v.agent_id} | {v.norm_name} | {v.description} | {v.severity} |")
     return "\n".join(lines)

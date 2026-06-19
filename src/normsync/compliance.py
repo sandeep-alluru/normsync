@@ -1,4 +1,5 @@
 """Agent compliance scoring."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -12,11 +13,11 @@ class AgentCompliance:
     agent_id: str
     total_actions: int
     violations: int
-    compliance_rate: float          # 0-1
+    compliance_rate: float  # 0-1
     violation_breakdown: dict[str, int]  # norm_name -> violation count
     # "compliant", "low_risk", "medium_risk", "high_risk", "non_compliant"
     risk_level: str
-    trend: str                      # "improving", "stable", "degrading"
+    trend: str  # "improving", "stable", "degrading"
 
 
 def _risk_level(compliance_rate: float) -> str:

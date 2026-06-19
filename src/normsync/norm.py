@@ -1,4 +1,5 @@
 """Core data model for normsync."""
+
 from __future__ import annotations
 
 import hashlib

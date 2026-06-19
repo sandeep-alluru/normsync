@@ -1,4 +1,5 @@
 """SQLite-backed persistence for norms, violations, and revisions."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -103,9 +104,7 @@ class NormStore:
 
     def get_violations(self) -> list[NormViolation]:
         """Retrieve all violations ordered by timestamp descending."""
-        rows = self._conn.execute(
-            "SELECT * FROM violations ORDER BY timestamp DESC"
-        ).fetchall()
+        rows = self._conn.execute("SELECT * FROM violations ORDER BY timestamp DESC").fetchall()
         result = []
         for r in rows:
             v = NormViolation(
@@ -130,9 +129,7 @@ class NormStore:
 
     def get_revisions(self) -> list[NormRevision]:
         """Retrieve all revisions ordered by timestamp descending."""
-        rows = self._conn.execute(
-            "SELECT * FROM revisions ORDER BY timestamp DESC"
-        ).fetchall()
+        rows = self._conn.execute("SELECT * FROM revisions ORDER BY timestamp DESC").fetchall()
         result = []
         for r in rows:
             rev = NormRevision(

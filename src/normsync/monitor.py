@@ -1,4 +1,5 @@
 """NormMonitor: check agent actions against active norms."""
+
 from __future__ import annotations
 
 import time

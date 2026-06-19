@@ -1,4 +1,5 @@
 """normsync — World constitution engine for norm-governed multi-agent games."""
+
 from __future__ import annotations
 
 from importlib.metadata import version as _version
