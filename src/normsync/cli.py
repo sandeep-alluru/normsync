@@ -8,6 +8,8 @@ import click
 from rich.console import Console
 from rich.table import Table
 
+from normsync.compliance import agent_compliance_report
+from normsync.conflicts import detect_norm_conflicts
 from normsync.monitor import NormMonitor
 from normsync.norm import AgentAction, WorldNorm
 from normsync.report import print_violations, to_json, to_markdown
@@ -167,6 +169,68 @@ def status(db: str) -> None:
     console.print(f"  Norms: {len(norms)} total, {len(active)} active")
     console.print(f"  Violations: {len(violations)}")
     console.print(f"  Revisions: {len(revisions)}")
+
+
+@main.command("compliance")
+@click.argument("agent_id")
+@click.option("--db", default=DEFAULT_DB, help="Path to SQLite database")
+def compliance_cmd(agent_id: str, db: str) -> None:
+    """Show compliance report for an agent (uses violations from the store)."""
+    if not os.path.exists(db):
+        console.print("[yellow]No database found.[/yellow]")
+        return
+    store = NormStore(db)
+    violations = [v for v in store.get_violations() if v.agent_id == agent_id]
+    # Reconstruct synthetic AgentAction objects from violation records
+    actions = [
+        AgentAction(
+            agent_id=v.agent_id,
+            action=v.description,
+            timestamp=v.timestamp,
+        )
+        for v in violations
+    ]
+    norms = store.get_norms(active_only=True)
+    monitor = NormMonitor(norms)
+    report = agent_compliance_report(monitor, agent_id, actions)
+    console.print(f"[bold]Compliance report for agent:[/bold] {agent_id}")
+    console.print(f"  Total actions (from violations): {report.total_actions}")
+    console.print(f"  Violations: {report.violations}")
+    compliance_pct = f"{report.compliance_rate * 100:.1f}%"
+    console.print(f"  Compliance rate: {compliance_pct}")
+    console.print(f"  Risk level: {report.risk_level}")
+    console.print(f"  Trend: {report.trend}")
+    if report.violation_breakdown:
+        console.print("  Violation breakdown:")
+        for norm_name, count in sorted(report.violation_breakdown.items(), key=lambda x: -x[1]):
+            console.print(f"    {norm_name}: {count}")
+    store.close()
+
+
+@main.command("conflicts")
+@click.option("--db", default=DEFAULT_DB, help="Path to SQLite database")
+def conflicts_cmd(db: str) -> None:
+    """Detect conflicting norms."""
+    if not os.path.exists(db):
+        console.print("[yellow]No database found.[/yellow]")
+        return
+    store = NormStore(db)
+    found = detect_norm_conflicts(store)
+    if not found:
+        console.print("[green]No norm conflicts detected.[/green]")
+        store.close()
+        return
+    console.print(f"[red]Found {len(found)} conflict(s):[/red]")
+    table = Table(title="Norm Conflicts")
+    table.add_column("Norm A", style="cyan")
+    table.add_column("Norm B", style="cyan")
+    table.add_column("Type", style="yellow")
+    table.add_column("Description")
+    table.add_column("Example Action", style="dim")
+    for c in found:
+        table.add_row(c.norm_a, c.norm_b, c.conflict_type, c.description, c.example_action)
+    console.print(table)
+    store.close()
 
 
 if __name__ == "__main__":

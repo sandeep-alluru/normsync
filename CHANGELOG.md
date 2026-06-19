@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `NormVersionStore` — track full history of norm changes with versioning and time-travel queries
+- `NormVersion` dataclass with version, changed_by, change_reason, previous_version fields
+- `agent_compliance_report()` — compute compliance rate, risk level, and trend for a single agent
+- `fleet_compliance_report()` — rank a fleet of agents by compliance (worst first)
+- `AgentCompliance` dataclass with violation_breakdown and risk_level
+- `detect_norm_conflicts()` — find logical contradictions, priority ambiguities, and scope overlaps between norms
+- `NormConflict` dataclass with conflict_type and example_action
+- CLI: `normsync compliance <agent_id>` and `normsync conflicts` commands
+
 ## [0.1.0] - 2026-06-18
 
 ### Added
