@@ -268,4 +268,11 @@ normsync is available as an MCP server on [Smithery](https://smithery.ai). Searc
 
 ---
 
+## Case Studies
+
+See how teams are using normsync in production:
+
+- [Real-Time Behavioral Governance for a 12-Agent AI Fleet](docs/case-studies/enterprise-ai-governance.md) — Apex Capital achieves 100% norm violation surfacing and a regulatorily defensible audit trail
+- [Instant Norm Propagation for 200 Autonomous NPC Agents](docs/case-studies/game-faction-governance.md) — Horizon Games reduces faction norm update propagation from 20 minutes to <100ms
+
 [![Star History Chart](https://api.star-history.com/svg?repos=sandeep-alluru/normsync&type=Date)](https://star-history.com/#sandeep-alluru/normsync&Date)
