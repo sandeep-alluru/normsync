@@ -59,7 +59,7 @@ class NormVersionStore:
             "changed_by, change_reason, previous_version, norm_snapshot"
         )
         self._conn.execute(
-            f"INSERT INTO norm_versions ({cols}) VALUES (?,?,?,?,?,?,?,?)",  # noqa: S608
+            f"INSERT INTO norm_versions ({cols}) VALUES (?,?,?,?,?,?,?,?)",  # noqa: S608  # nosec B608
             (
                 norm.id,
                 norm.name,
