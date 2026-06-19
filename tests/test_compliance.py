@@ -1,7 +1,6 @@
 """Tests for normsync.compliance."""
-import pytest
 
-from normsync.compliance import AgentCompliance, agent_compliance_report, fleet_compliance_report
+from normsync.compliance import agent_compliance_report, fleet_compliance_report
 from normsync.monitor import NormMonitor
 from normsync.norm import AgentAction, WorldNorm
 

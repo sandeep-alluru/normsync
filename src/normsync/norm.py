@@ -58,7 +58,7 @@ class AgentAction:
     location: str = ""
     target: str = ""
     faction: str = ""
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     timestamp: float = 0.0
     id: str = field(init=False)
 

@@ -1,7 +1,6 @@
 """Tests for normsync.conflicts."""
-import pytest
 
-from normsync.conflicts import NormConflict, detect_norm_conflicts
+from normsync.conflicts import detect_norm_conflicts
 from normsync.norm import WorldNorm
 from normsync.store import NormStore
 

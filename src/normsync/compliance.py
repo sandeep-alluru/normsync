@@ -51,8 +51,11 @@ def agent_compliance_report(
 
     # Check each action and collect violations
     all_violations = []
+    violating_action_count = 0
     for action in agent_actions:
         viols = monitor.check(action)
+        if viols:
+            violating_action_count += 1
         all_violations.extend(viols)
 
     total_violations = len(all_violations)
@@ -62,8 +65,8 @@ def agent_compliance_report(
     for v in all_violations:
         violation_breakdown[v.norm_name] = violation_breakdown.get(v.norm_name, 0) + 1
 
-    # Compliance rate
-    compliance_rate = 1.0 - (total_violations / max(1, total_actions))
+    # Compliance rate: fraction of actions with ZERO violations (always 0-1)
+    compliance_rate = 1.0 - (violating_action_count / max(1, total_actions))
 
     # Risk level
     risk = _risk_level(compliance_rate)

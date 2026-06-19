@@ -7,7 +7,6 @@ import unittest.mock as mock
 
 def test_mcp_server_importable():
     """Importing mcp_server initializes the module-level _store and _monitor."""
-    import importlib
 
     import normsync.mcp_server as mcp_mod
 

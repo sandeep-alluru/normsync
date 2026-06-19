@@ -1,11 +1,9 @@
 """Tests for normsync.versioning."""
 import time
 
-import pytest
-
 from normsync.norm import WorldNorm
 from normsync.store import NormStore
-from normsync.versioning import NormVersion, NormVersionStore
+from normsync.versioning import NormVersionStore
 
 
 def make_norm(name="no_attack"):

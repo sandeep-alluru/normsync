@@ -22,18 +22,22 @@ from normsync.monitor import NormMonitor
 from normsync.norm import AgentAction, WorldNorm
 from normsync.store import NormStore
 
+try:
+    import mcp.server.stdio as _mcp_stdio
+    import mcp.types as _mcp_types
+    from mcp.server import Server as _Server
+
+    _HAS_MCP = True
+except ImportError:
+    _HAS_MCP = False
+
 _store = NormStore()
 _monitor = NormMonitor()
 
 
-def _require_mcp() -> Any:
-    try:
-        import mcp.server.stdio
-        import mcp.types as types
-        from mcp.server import Server
-
-        return mcp, types, Server
-    except ImportError:
+def _require_mcp() -> None:
+    """Call sys.exit(1) if the mcp package is not installed."""
+    if not _HAS_MCP:
         print(
             "MCP server requires: pip install 'normsync[mcp]'",
             file=sys.stderr,
@@ -43,14 +47,14 @@ def _require_mcp() -> Any:
 
 def run_server() -> None:
     """Start the MCP server on stdio."""
-    mcp_mod, types, Server = _require_mcp()
+    _require_mcp()
 
-    server = Server("normsync")
+    server = _Server("normsync")
 
     @server.list_tools()
-    async def list_tools() -> list[types.Tool]:
+    async def list_tools() -> list[_mcp_types.Tool]:
         return [
-            types.Tool(
+            _mcp_types.Tool(
                 name="add_norm",
                 description="Add a normative rule to the world constitution",
                 inputSchema={
@@ -64,7 +68,7 @@ def run_server() -> None:
                     "required": ["name", "description", "condition", "prohibited"],
                 },
             ),
-            types.Tool(
+            _mcp_types.Tool(
                 name="check_action",
                 description="Check an agent action against active norms",
                 inputSchema={
@@ -77,7 +81,7 @@ def run_server() -> None:
                     "required": ["agent_id", "action"],
                 },
             ),
-            types.Tool(
+            _mcp_types.Tool(
                 name="list_violations",
                 description="List all recorded norm violations",
                 inputSchema={"type": "object", "properties": {}},
@@ -87,7 +91,7 @@ def run_server() -> None:
     @server.call_tool()
     async def call_tool(
         name: str, arguments: dict[str, Any]
-    ) -> list[types.TextContent]:
+    ) -> list[_mcp_types.TextContent]:
         if name == "add_norm":
             norm = WorldNorm(
                 name=arguments["name"],
@@ -98,7 +102,7 @@ def run_server() -> None:
             _store.save_norm(norm)
             _monitor.add_norm(norm)
             return [
-                types.TextContent(
+                _mcp_types.TextContent(
                     type="text",
                     text=f"Added norm '{norm.name}' (id={norm.id})",
                 )
@@ -117,22 +121,22 @@ def run_server() -> None:
                 lines = [f"Found {len(violations)} violation(s):"]
                 for v in violations:
                     lines.append(f"  - {v.description}")
-                return [types.TextContent(type="text", text="\n".join(lines))]
-            return [types.TextContent(type="text", text="No violations detected.")]
+                return [_mcp_types.TextContent(type="text", text="\n".join(lines))]
+            return [_mcp_types.TextContent(type="text", text="No violations detected.")]
         elif name == "list_violations":
             violations = _store.get_violations()
             if not violations:
-                return [types.TextContent(type="text", text="No violations recorded.")]
+                return [_mcp_types.TextContent(type="text", text="No violations recorded.")]
             lines = [f"Total violations: {len(violations)}"]
             for v in violations:
                 lines.append(f"  - [{v.agent_id}] {v.norm_name}: {v.description[:60]}")
-            return [types.TextContent(type="text", text="\n".join(lines))]
+            return [_mcp_types.TextContent(type="text", text="\n".join(lines))]
         raise ValueError(f"Unknown tool: {name}")
 
     import asyncio
 
     async def _main() -> None:
-        async with mcp_mod.server.stdio.stdio_server() as (read_stream, write_stream):
+        async with _mcp_stdio.stdio_server() as (read_stream, write_stream):
             await server.run(
                 read_stream, write_stream, server.create_initialization_options()
             )
