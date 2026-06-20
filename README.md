@@ -332,3 +332,10 @@ See how teams are using normsync in production:
 - [Instant Norm Propagation for 200 Autonomous NPC Agents](docs/case-studies/game-faction-governance.md) — Horizon Games reduces faction norm update propagation from 20 minutes to <100ms
 
 [![Star History Chart](https://api.star-history.com/svg?repos=sandeep-alluru/normsync&type=Date)](https://star-history.com/#sandeep-alluru/normsync&Date)
+
+---
+
+## Stay Updated
+
+Subscribe to [**The Silence Layer**](https://newsletter.salluru.dev) — weekly dispatches on production AI infrastructure, new releases, and the failure modes that production AI systems don't surface until it's too late.
+
