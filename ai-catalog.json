@@ -1,0 +1,40 @@
+{
+  "$schema": "https://agenticresourcediscovery.org/schema/v1/catalog.json",
+  "version": "1.0.0",
+  "name": "NormSync",
+  "description": "World constitution engine for norm-governed multi-agent games",
+  "publisher": {
+    "name": "Sandeep Alluru",
+    "email": "onepuncchh@gmail.com",
+    "url": "https://github.com/sandeep-alluru"
+  },
+  "tools": [
+    {
+      "id": "io.github.sandeep-alluru/normsync",
+      "name": "normsync",
+      "title": "NormSync",
+      "description": "World constitution engine for norm-governed multi-agent games",
+      "version": "0.1.0",
+      "protocol": "mcp",
+      "transport": "stdio",
+      "install": {
+        "pypi": {
+          "package": "normsync",
+          "extras": [
+            "mcp"
+          ],
+          "runtimeHint": "uvx"
+        }
+      },
+      "invocation": {
+        "command": "normsync-mcp"
+      },
+      "repository": {
+        "url": "https://github.com/sandeep-alluru/normsync",
+        "source": "github"
+      },
+      "homepage": "https://github.com/sandeep-alluru/normsync",
+      "license": "MIT"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.sandeep-alluru/normsync",
+  "title": "NormSync",
+  "description": "World constitution engine for norm-governed multi-agent games",
+  "version": "0.1.1",
+  "websiteUrl": "https://github.com/sandeep-alluru/normsync",
+  "repository": {
+    "url": "https://github.com/sandeep-alluru/normsync",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "normsync",
+      "version": "0.1.1",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
