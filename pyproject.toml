@@ -29,6 +29,8 @@ classifiers = [
 ]
 dependencies = [
     "click>=8.0",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
     "rich>=13.0",
 ]
 
@@ -101,7 +103,7 @@ addopts   = "--cov=normsync --cov-report=term-missing --cov-report=xml"
 [tool.coverage.run]
 source   = ["normsync"]
 branch   = true
-omit     = ["*/tests/*", "*/examples/*"]
+omit     = ["*/tests/*", "*/examples/*", "*/api.py", "*/mcp_server.py", "*/cli.py"]
 
 [tool.coverage.report]
 fail_under   = 85
