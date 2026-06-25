@@ -3,15 +3,46 @@
 from __future__ import annotations
 
 import time
+from typing import TYPE_CHECKING
 
 from normsync.norm import AgentAction, NormRevision, NormViolation, WorldNorm
 
+if TYPE_CHECKING:
+    from normsync.store import NormStore
+
 
 class NormMonitor:
-    """Check agent actions against active norms using simple string matching."""
+    """Check agent actions against active norms using simple string matching.
 
-    def __init__(self, norms: list[WorldNorm] | None = None) -> None:
-        self._norms: list[WorldNorm] = list(norms or [])
+    Can be constructed with either a list of WorldNorm objects or a NormStore.
+    When constructed with a NormStore, norms are read from the store on every
+    call to ``active_norms()`` and ``check()``, so policy changes propagate to
+    all monitors sharing the same store without any restart.
+
+    Examples::
+
+        # In-memory list of norms (norm list is fixed after construction)
+        monitor = NormMonitor(norms=[...])
+
+        # Live NormStore — picks up norm changes automatically
+        monitor = NormMonitor(store)
+    """
+
+    def __init__(
+        self,
+        norms: list[WorldNorm] | NormStore | None = None,
+        *,
+        store: NormStore | None = None,
+    ) -> None:
+        # Support both NormMonitor(store) and NormMonitor(store=store)
+        from normsync.store import NormStore as _NormStore  # local to avoid circular at module level
+
+        if isinstance(norms, _NormStore):
+            self._store: NormStore | None = norms
+            self._norms: list[WorldNorm] = []
+        else:
+            self._store = store
+            self._norms = list(norms or [])
 
     def add_norm(self, norm: WorldNorm) -> None:
         """Add a norm to the monitor."""
@@ -30,7 +61,13 @@ class NormMonitor:
         return None
 
     def active_norms(self) -> list[WorldNorm]:
-        """Return all currently active norms."""
+        """Return all currently active norms.
+
+        When the monitor was constructed with a ``NormStore``, this queries
+        the store live so that any norm changes are immediately reflected.
+        """
+        if self._store is not None:
+            return self._store.get_norms(active_only=True)
         return [n for n in self._norms if n.active]
 
     def check(self, action: AgentAction) -> list[NormViolation]:
