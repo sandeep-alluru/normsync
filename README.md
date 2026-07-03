@@ -339,3 +339,5 @@ See how teams are using normsync in production:
 
 Subscribe to [**The Silence Layer**](https://newsletter.salluru.dev) — weekly dispatches on production AI infrastructure, new releases, and the failure modes that production AI systems don't surface until it's too late.
 
+
+<!-- mcp-name: io.github.sandeep-alluru/normsync -->
