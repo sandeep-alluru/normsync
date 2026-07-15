@@ -69,8 +69,12 @@ def test_detect_priority_ambiguity():
 
 def test_conflict_fields():
     store = NormStore(":memory:")
-    norm_a = WorldNorm(name="na", description="d", condition="zone", prohibited="attack", priority=1)
-    norm_b = WorldNorm(name="nb", description="d", condition="zone attack", prohibited="defend", priority=1)
+    norm_a = WorldNorm(
+        name="na", description="d", condition="zone", prohibited="attack", priority=1
+    )
+    norm_b = WorldNorm(
+        name="nb", description="d", condition="zone attack", prohibited="defend", priority=1
+    )
     store.save_norm(norm_a)
     store.save_norm(norm_b)
     conflicts = detect_norm_conflicts(store)
@@ -110,18 +114,20 @@ def test_detect_scope_overlap():
 def test_no_duplicate_pairs():
     store = NormStore(":memory:")
     for i in range(3):
-        store.save_norm(WorldNorm(
-            name=f"norm_{i}",
-            description="d",
-            condition="zone",
-            prohibited="attack",
-            priority=1,
-        ))
+        store.save_norm(
+            WorldNorm(
+                name=f"norm_{i}",
+                description="d",
+                condition="zone",
+                prohibited="attack",
+                priority=1,
+            )
+        )
     conflicts = detect_norm_conflicts(store)
     # Check no (a,b) and (b,a) both present
     seen = set()
     for c in conflicts:
-        pair = frozenset([c.norm_a, c.norm_b])
+        frozenset([c.norm_a, c.norm_b])
         # Multiple conflict types for the same pair are OK, but check for same type
         key = (frozenset([c.norm_a, c.norm_b]), c.conflict_type)
         assert key not in seen, f"Duplicate conflict: {c}"

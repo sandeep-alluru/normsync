@@ -1,4 +1,5 @@
 """Tests for WorldNorm, AgentAction, NormViolation, NormRevision data models."""
+
 from __future__ import annotations
 
 from normsync.norm import AgentAction, NormRevision, NormViolation, WorldNorm

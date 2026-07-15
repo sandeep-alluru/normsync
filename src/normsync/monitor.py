@@ -35,7 +35,9 @@ class NormMonitor:
         store: NormStore | None = None,
     ) -> None:
         # Support both NormMonitor(store) and NormMonitor(store=store)
-        from normsync.store import NormStore as _NormStore  # local to avoid circular at module level
+        from normsync.store import (
+            NormStore as _NormStore,  # local to avoid circular at module level
+        )
 
         if isinstance(norms, _NormStore):
             self._store: NormStore | None = norms

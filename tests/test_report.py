@@ -1,4 +1,5 @@
 """Tests for report formatters."""
+
 from __future__ import annotations
 
 import io
@@ -19,9 +20,7 @@ def make_norms() -> list[WorldNorm]:
 
 def make_violations() -> list[NormViolation]:
     return [
-        NormViolation(
-            "norm1", "no-attack", "act1", "agent1", "Violated no-attack", timestamp=1.0
-        ),
+        NormViolation("norm1", "no-attack", "act1", "agent1", "Violated no-attack", timestamp=1.0),
     ]
 
 

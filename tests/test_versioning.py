@@ -1,4 +1,5 @@
 """Tests for normsync.versioning."""
+
 import time
 
 from normsync.norm import WorldNorm
@@ -31,7 +32,7 @@ def test_version_increments():
     version_store = NormVersionStore(store)
     norm = make_norm()
     store.save_norm(norm)
-    v1 = version_store.record_change(norm, "admin", "First")
+    version_store.record_change(norm, "admin", "First")
     v2 = version_store.record_change(norm, "admin", "Second")
     assert v2.version == 2
     assert v2.previous_version == 1

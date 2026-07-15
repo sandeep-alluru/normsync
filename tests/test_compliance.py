@@ -50,7 +50,9 @@ def test_risk_level_non_compliant():
 def test_fleet_compliance_sorted():
     monitor = make_monitor()
     actions_by_agent = {
-        "good_agent": [AgentAction(agent_id="good_agent", action="move", location="x", timestamp=1.0)],
+        "good_agent": [
+            AgentAction(agent_id="good_agent", action="move", location="x", timestamp=1.0)
+        ],
         "bad_agent": [make_action("bad_agent", "attack", "safe_zone")],
     }
     reports = fleet_compliance_report(monitor, actions_by_agent)
@@ -61,7 +63,10 @@ def test_fleet_compliance_sorted():
 
 def test_trend_stable():
     monitor = NormMonitor([])  # no norms = no violations
-    actions = [AgentAction(agent_id="a1", action="move", location="x", timestamp=float(i)) for i in range(10)]
+    actions = [
+        AgentAction(agent_id="a1", action="move", location="x", timestamp=float(i))
+        for i in range(10)
+    ]
     report = agent_compliance_report(monitor, "a1", actions)
     assert report.trend == "stable"
 
@@ -70,8 +75,10 @@ def test_risk_level_low_risk():
     """compliance_rate >= 0.9 but < 1.0 -> low_risk."""
     monitor = make_monitor()
     # 1 violation out of 10 actions = 0.9 rate
-    actions = [AgentAction(agent_id="a1", action="move", location="safe_zone", timestamp=float(i))
-               for i in range(9)]
+    actions = [
+        AgentAction(agent_id="a1", action="move", location="safe_zone", timestamp=float(i))
+        for i in range(9)
+    ]
     actions.append(make_action("a1", "attack", "safe_zone"))
     report = agent_compliance_report(monitor, "a1", actions)
     assert report.risk_level == "low_risk"
@@ -81,8 +88,10 @@ def test_risk_level_medium_risk():
     """compliance_rate >= 0.7 but < 0.9 -> medium_risk."""
     monitor = make_monitor()
     # 2 violations out of 10 actions = 0.8 rate
-    actions = [AgentAction(agent_id="a1", action="move", location="safe_zone", timestamp=float(i))
-               for i in range(8)]
+    actions = [
+        AgentAction(agent_id="a1", action="move", location="safe_zone", timestamp=float(i))
+        for i in range(8)
+    ]
     actions += [make_action("a1", "attack", "safe_zone") for _ in range(2)]
     report = agent_compliance_report(monitor, "a1", actions)
     assert report.risk_level == "medium_risk"
@@ -92,8 +101,10 @@ def test_risk_level_high_risk():
     """compliance_rate >= 0.5 but < 0.7 -> high_risk."""
     monitor = make_monitor()
     # 4 violations out of 10 actions = 0.6 rate
-    actions = [AgentAction(agent_id="a1", action="move", location="safe_zone", timestamp=float(i))
-               for i in range(6)]
+    actions = [
+        AgentAction(agent_id="a1", action="move", location="safe_zone", timestamp=float(i))
+        for i in range(6)
+    ]
     actions += [make_action("a1", "attack", "safe_zone") for _ in range(4)]
     report = agent_compliance_report(monitor, "a1", actions)
     assert report.risk_level == "high_risk"

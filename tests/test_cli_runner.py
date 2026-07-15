@@ -1,4 +1,5 @@
 """CLI tests using Click's test runner."""
+
 from __future__ import annotations
 
 import os
@@ -62,9 +63,7 @@ class TestCliAdd:
 
 class TestCliCheck:
     def test_check_no_db(self, runner, tmp_db):
-        result = runner.invoke(
-            main, ["check", "agent1", "attack", "safe_zone", "--db", tmp_db]
-        )
+        result = runner.invoke(main, ["check", "agent1", "attack", "safe_zone", "--db", tmp_db])
         assert result.exit_code == 0
         assert "No database" in result.output
 
@@ -99,22 +98,14 @@ class TestCliViolations:
         assert result.exit_code == 0
 
     def test_violations_json_format(self, runner, tmp_db):
-        runner.invoke(
-            main, ["add", "no-attack", "desc", "safe_zone", "attack", "--db", tmp_db]
-        )
+        runner.invoke(main, ["add", "no-attack", "desc", "safe_zone", "attack", "--db", tmp_db])
         runner.invoke(main, ["check", "agent1", "attack", "safe_zone", "--db", tmp_db])
-        result = runner.invoke(
-            main, ["violations", "--format", "json", "--db", tmp_db]
-        )
+        result = runner.invoke(main, ["violations", "--format", "json", "--db", tmp_db])
         assert result.exit_code == 0
 
     def test_violations_markdown_format(self, runner, tmp_db):
-        runner.invoke(
-            main, ["add", "no-attack", "desc", "safe_zone", "attack", "--db", tmp_db]
-        )
-        result = runner.invoke(
-            main, ["violations", "--format", "markdown", "--db", tmp_db]
-        )
+        runner.invoke(main, ["add", "no-attack", "desc", "safe_zone", "attack", "--db", tmp_db])
+        result = runner.invoke(main, ["violations", "--format", "markdown", "--db", tmp_db])
         assert result.exit_code == 0
 
 
@@ -125,9 +116,7 @@ class TestCliStatus:
         assert "No database" in result.output
 
     def test_status_shows_counts(self, runner, tmp_db):
-        runner.invoke(
-            main, ["add", "no-attack", "desc", "safe_zone", "attack", "--db", tmp_db]
-        )
+        runner.invoke(main, ["add", "no-attack", "desc", "safe_zone", "attack", "--db", tmp_db])
         result = runner.invoke(main, ["status", "--db", tmp_db])
         assert result.exit_code == 0
         assert "Norms" in result.output
@@ -140,18 +129,14 @@ class TestCliCompliance:
         assert "No database" in result.output
 
     def test_compliance_no_violations(self, runner, tmp_db):
-        runner.invoke(
-            main, ["add", "no-attack", "desc", "safe_zone", "attack", "--db", tmp_db]
-        )
+        runner.invoke(main, ["add", "no-attack", "desc", "safe_zone", "attack", "--db", tmp_db])
         result = runner.invoke(main, ["compliance", "agent1", "--db", tmp_db])
         assert result.exit_code == 0
         assert "Compliance report" in result.output
 
     def test_compliance_with_violations(self, runner, tmp_db):
         # Add norm then create a violation
-        runner.invoke(
-            main, ["add", "no-attack", "desc", "safe_zone", "attack", "--db", tmp_db]
-        )
+        runner.invoke(main, ["add", "no-attack", "desc", "safe_zone", "attack", "--db", tmp_db])
         runner.invoke(main, ["check", "agent1", "attack", "safe_zone", "--db", tmp_db])
         result = runner.invoke(main, ["compliance", "agent1", "--db", tmp_db])
         assert result.exit_code == 0
@@ -165,9 +150,7 @@ class TestCliConflicts:
         assert "No database" in result.output
 
     def test_conflicts_no_conflicts(self, runner, tmp_db):
-        runner.invoke(
-            main, ["add", "no-attack", "desc", "safe_zone", "attack", "--db", tmp_db]
-        )
+        runner.invoke(main, ["add", "no-attack", "desc", "safe_zone", "attack", "--db", tmp_db])
         result = runner.invoke(main, ["conflicts", "--db", tmp_db])
         assert result.exit_code == 0
 
@@ -175,13 +158,35 @@ class TestCliConflicts:
         # Two norms with same priority and overlapping condition — priority ambiguity
         runner.invoke(
             main,
-            ["add", "norm-a", "Desc A", "zone combat", "flee", "--db", tmp_db,
-             "--priority", "5", "--scope", "global"],
+            [
+                "add",
+                "norm-a",
+                "Desc A",
+                "zone combat",
+                "flee",
+                "--db",
+                tmp_db,
+                "--priority",
+                "5",
+                "--scope",
+                "global",
+            ],
         )
         runner.invoke(
             main,
-            ["add", "norm-b", "Desc B", "zone attack", "retreat", "--db", tmp_db,
-             "--priority", "5", "--scope", "global"],
+            [
+                "add",
+                "norm-b",
+                "Desc B",
+                "zone attack",
+                "retreat",
+                "--db",
+                tmp_db,
+                "--priority",
+                "5",
+                "--scope",
+                "global",
+            ],
         )
         result = runner.invoke(main, ["conflicts", "--db", tmp_db])
         assert result.exit_code == 0
