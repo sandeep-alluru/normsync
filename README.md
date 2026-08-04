@@ -341,3 +341,7 @@ Subscribe to [**The Silence Layer**](https://newsletter.salluru.dev) — weekly 
 
 
 <!-- mcp-name: io.github.sandeep-alluru/normsync -->
+
+## Closed loop / Non-Ornament
+
+See [docs/CLOSED_LOOP.md](docs/CLOSED_LOOP.md) for when this library is load-bearing vs ornamental, and when **not** to use it.
