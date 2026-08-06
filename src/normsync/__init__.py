@@ -4,6 +4,14 @@ from __future__ import annotations
 
 from importlib.metadata import version as _version
 
+from normsync.closed_loop import (
+    ClosedLoopError,
+    GateOutcome,
+    assert_action_allowed,
+    gate_action,
+    gate_actions,
+    is_high_risk_action,
+)
 from normsync.compliance import AgentCompliance, agent_compliance_report, fleet_compliance_report
 from normsync.conflicts import NormConflict, detect_norm_conflicts
 from normsync.monitor import NormMonitor
@@ -16,6 +24,8 @@ __version__ = _version("normsync")
 __all__ = [
     "AgentAction",
     "AgentCompliance",
+    "ClosedLoopError",
+    "GateOutcome",
     "NormConflict",
     "NormMonitor",
     "NormRevision",
@@ -25,8 +35,12 @@ __all__ = [
     "NormViolation",
     "WorldNorm",
     "agent_compliance_report",
+    "assert_action_allowed",
     "detect_norm_conflicts",
     "fleet_compliance_report",
+    "gate_action",
+    "gate_actions",
+    "is_high_risk_action",
     "print_violations",
     "to_json",
     "to_markdown",

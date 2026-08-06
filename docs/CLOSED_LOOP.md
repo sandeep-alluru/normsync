@@ -1,19 +1,21 @@
 # Closed loop — `normsync`
 
-**Status:** stub (eagle-eyes Phase 0 / 2026-08-04)  
+**Status:** reader wired (eagle-eyes / 2026-08-06) — **NORM-ENFORCE**  
 **Owner loop:** L7 multi-agent
 
 ## Load-bearing job
 
-Norm registry + violation monitoring
+Norm registry + violation monitoring + **action gate**
 
 ## Who reads the output?
 
-Monitor emits violations to ledger/gate
+- Library: `gate_action` / `assert_action_allowed` / `gate_actions`
+- `NormMonitor.check` is used inside the gate; violations may be saved to store
 
 ## What outcome changes?
 
-Prohibited actions blocked or logged for enforcement
+Prohibited actions blocked (FAIL). High-risk unattended actions with **zero**
+active norms → **FAIL_LOUD** (NORM-ENFORCE / unattended post).
 
 ## When NOT to use (anti-ornament)
 
@@ -21,9 +23,9 @@ Write-only norm store without check path
 
 ## Non-Ornament checklist
 
-- [ ] Reader implemented in CI, gate, or eagle-eyes script
-- [ ] Empty/wrong output fails loudly
-- [ ] Not exposed as free MCP in product agents
+- [x] Reader implemented (`closed_loop.gate_action`)
+- [x] Empty/wrong output fails loudly (exit 2 for no norms on high-risk)
+- [x] Not free MCP decoration without gate
 - [ ] Linked gap IDs in mem0 when improving
 
 ## Related failures (farm memory)
