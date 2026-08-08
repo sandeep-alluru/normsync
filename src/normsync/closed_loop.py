@@ -1,20 +1,25 @@
-"""Closed-loop action gate for normsync (NORM-ENFORCE / Non-Ornament L7).
+"""Closed-loop action gate for normsync (NORM-ENFORCE + SCOPE-BOUND / MNC).
 
 Who reads the output?
   Agent runtimes, publish loops, CI — anything that must *block* an action
-  when norms forbid it or when the norm registry is empty (write-only ornament).
+  when norms forbid it or when the norm registry is empty (write-only ornament);
+  multi-agent channels that must refuse out-of-scope declassification/export.
 
 What outcome changes?
   High-risk unattended actions (e.g. ``post``) without active norms → FAIL_LOUD.
   Actions that violate active norms → FAIL.
   Allowed actions with a live norm set → PASS.
+  Export/share targets outside declared scope → FAIL (MNC SCOPE-BOUND).
+  Empty declared scope → FAIL_LOUD.
 
 Farm case NORM-ENFORCE:
   Unattended post without a governing norm. A norm store that is never checked
   is ornament. The gate is the load-bearing reader.
 
-Public map: multi-agent coordination / ICLR multi-agent failures / SocietyBench —
-shared norms must constrain actions, not only be stored.
+Public map:
+  * multi-agent coordination / ICLR multi-agent failures / SocietyBench
+  * MNC scope-bound semantic declassification (arXiv 2608.01719) — private
+    agent communication must not leak outside declared scope
 """
 
 from __future__ import annotations
@@ -40,8 +45,43 @@ DEFAULT_HIGH_RISK_ACTIONS: frozenset[str] = frozenset(
         "transfer",
         "attack",
         "exfiltrate",
+        "declassify",
+        "export",
+        "share",
+        "broadcast",
+        "reveal",
     }
 )
+
+# Actions that move content across scope boundaries (MNC declassification class).
+DEFAULT_CROSS_SCOPE_ACTIONS: frozenset[str] = frozenset(
+    {
+        "export",
+        "share",
+        "publish",
+        "post",
+        "broadcast",
+        "send",
+        "send_email",
+        "declassify",
+        "reveal",
+        "exfiltrate",
+        "forward",
+        "cc_external",
+    }
+)
+
+# Classification ranks — higher is more public.
+_CLASS_RANK: dict[str, int] = {
+    "secret": 0,
+    "private": 1,
+    "internal": 2,
+    "team": 2,
+    "confidential": 1,
+    "restricted": 1,
+    "public": 3,
+    "open": 3,
+}
 
 
 class ClosedLoopError(ValueError):
@@ -50,7 +90,7 @@ class ClosedLoopError(ValueError):
 
 @dataclass(frozen=True)
 class GateOutcome:
-    """Result of gating an agent action against norms.
+    """Result of gating an agent action against norms or scope bounds.
 
     Attributes:
         ok: True only when the action may proceed.
@@ -64,6 +104,9 @@ class GateOutcome:
         violations: Structured violation payloads.
         human_required: True when enforcement needs human review.
         high_risk: Whether the action was classified high-risk.
+        declared_scope: Scope labels when scope-gated.
+        target_scope: Target scope labels when scope-gated.
+        out_of_scope: Targets outside declared scope.
     """
 
     ok: bool
@@ -77,6 +120,9 @@ class GateOutcome:
     violations: tuple[dict[str, Any], ...] = ()
     human_required: bool = False
     high_risk: bool = False
+    declared_scope: tuple[str, ...] = ()
+    target_scope: tuple[str, ...] = ()
+    out_of_scope: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -91,6 +137,9 @@ class GateOutcome:
             "violations": list(self.violations),
             "human_required": self.human_required,
             "high_risk": self.high_risk,
+            "declared_scope": list(self.declared_scope),
+            "target_scope": list(self.target_scope),
+            "out_of_scope": list(self.out_of_scope),
         }
 
 
@@ -288,3 +337,170 @@ def gate_actions(
         active_norm_count=last_ok.active_norm_count,
         high_risk=False,
     )
+
+
+# ---------------------------------------------------------------------------
+# SCOPE-BOUND / MNC — refuse out-of-scope declassification & export
+# ---------------------------------------------------------------------------
+
+
+def _canon_scope(label: str) -> str:
+    return (label or "").strip().lower().replace(" ", "_").replace("-", "_")
+
+
+def _scope_set(labels: Sequence[str] | str | None) -> list[str]:
+    if labels is None:
+        return []
+    if isinstance(labels, str):
+        labels = [labels]
+    out: list[str] = []
+    seen: set[str] = set()
+    for x in labels:
+        s = _canon_scope(str(x))
+        if s and s not in seen:
+            seen.add(s)
+            out.append(s)
+    return out
+
+
+def is_cross_scope_action(action: str) -> bool:
+    """True if *action* can move content across communication scopes."""
+    a = _canonical_action(action)
+    if not a:
+        return False
+    head = a.split(":", 1)[0]
+    return a in DEFAULT_CROSS_SCOPE_ACTIONS or head in DEFAULT_CROSS_SCOPE_ACTIONS
+
+
+def gate_scope(
+    action: str,
+    *,
+    declared_scope: Sequence[str] | str | None = None,
+    target_scope: Sequence[str] | str | None = None,
+    classification: str = "private",
+    allow_declassify: bool = False,
+    require_declared_scope: bool = True,
+) -> GateOutcome:
+    """Refuse out-of-scope export/declassify (MNC SCOPE-BOUND class).
+
+    Public case: arXiv 2608.01719 *MNC: Scope-Bound Semantic Declassification
+    for Private LLM-Agent Communication*. Multi-agent channels declare a
+    communication scope; agents must not share/export/declassify content to
+    audiences outside that scope without an explicit declassify grant.
+
+    Rules:
+
+    1. Empty action → **FAIL_LOUD**
+    2. Empty ``declared_scope`` when required → **FAIL_LOUD**
+    3. Any ``target_scope`` not ⊆ ``declared_scope`` → **FAIL** (scope escape)
+    4. Cross-scope action (export/share/publish/…) on private/secret content
+       toward a more public classification without ``allow_declassify`` → **FAIL**
+    5. In-scope, no unauthorized declassify → **PASS**
+
+    Args:
+        action: Proposed action (e.g. ``share``, ``export``, ``send``).
+        declared_scope: Allowed audience/scope labels for this channel.
+        target_scope: Scope(s) the action would reach (recipients, channels).
+        classification: Content classification (private/internal/public/…).
+        allow_declassify: Human/policy grant to widen classification.
+        require_declared_scope: Empty declared scope → FAIL_LOUD.
+    """
+    canon = _canonical_action(action)
+    declared = _scope_set(declared_scope)
+    targets = _scope_set(target_scope)
+    klass = _canon_scope(classification) or "private"
+
+    if not canon:
+        return _fail_loud(
+            "SCOPE-BOUND/MNC: empty action — cannot gate phantom declassify",
+            action=None,
+            high_risk=True,
+            declared_scope=tuple(declared),
+            target_scope=tuple(targets),
+        )
+
+    if require_declared_scope and len(declared) == 0:
+        return _fail_loud(
+            "SCOPE-BOUND/MNC: empty declared_scope — private agent channel "
+            "has no bound; cannot authorize share/export (arXiv 2608.01719)",
+            action=canon,
+            high_risk=True,
+            declared_scope=(),
+            target_scope=tuple(targets),
+        )
+
+    declared_set = set(declared)
+    oos = [t for t in targets if t not in declared_set]
+    if oos:
+        return _fail(
+            f"SCOPE-BOUND/MNC: target_scope {oos} outside declared_scope "
+            f"{declared} for action {canon!r} — refuse scope escape / leak",
+            action=canon,
+            high_risk=True,
+            declared_scope=tuple(declared),
+            target_scope=tuple(targets),
+            out_of_scope=tuple(oos),
+            violation_count=len(oos),
+        )
+
+    # Declassification: cross-scope action with private content → public-ish
+    # without allow_declassify.
+    if is_cross_scope_action(canon) and not allow_declassify:
+        src_rank = _CLASS_RANK.get(klass, 1)
+        # If any target looks public/external, treat as widen
+        public_targets = {
+            t
+            for t in targets
+            if t in {"public", "open", "external", "internet", "www"}
+            or t.startswith("public_")
+            or t.startswith("ext_")
+        }
+        # Also: classification public without grant when action is declassify
+        if canon in {"declassify", "reveal", "exfiltrate"} and src_rank < 3:
+            return _fail(
+                f"SCOPE-BOUND/MNC: {canon!r} of classification={klass!r} "
+                f"without allow_declassify — refuse unauthorized declassification",
+                action=canon,
+                high_risk=True,
+                declared_scope=tuple(declared),
+                target_scope=tuple(targets),
+            )
+        if public_targets and src_rank < 3:
+            return _fail(
+                f"SCOPE-BOUND/MNC: {canon!r} moves {klass!r} content to "
+                f"public targets {sorted(public_targets)} without "
+                f"allow_declassify — refuse scope-bound leak",
+                action=canon,
+                high_risk=True,
+                declared_scope=tuple(declared),
+                target_scope=tuple(targets),
+                out_of_scope=tuple(sorted(public_targets)),
+            )
+
+    return GateOutcome(
+        ok=True,
+        verdict="PASS",
+        reason=(
+            f"SCOPE-BOUND ok: action={canon!r} class={klass!r} "
+            f"declared={declared} targets={targets} "
+            f"allow_declassify={allow_declassify}"
+        ),
+        exit_code=0,
+        action=canon,
+        human_required=False,
+        high_risk=is_cross_scope_action(canon),
+        declared_scope=tuple(declared),
+        target_scope=tuple(targets),
+        out_of_scope=(),
+    )
+
+
+def assert_in_scope(
+    action: str,
+    **kwargs: Any,
+) -> GateOutcome:
+    """Raise :class:`ClosedLoopError` unless :func:`gate_scope` is ok."""
+    outcome = gate_scope(action, **kwargs)
+    if not outcome.ok:
+        raise ClosedLoopError(f"{outcome.verdict}: {outcome.reason}")
+    return outcome

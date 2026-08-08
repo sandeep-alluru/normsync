@@ -42,9 +42,50 @@ CLOSED_LOOP: write-only norm store without check path is ornament.
 
 ---
 
+## Case SCOPE-BOUND — MNC out-of-scope declassification
+
+**Source:** Track B research (`20260808T001238Z`):
+
+| Case | Link |
+|------|------|
+| MNC scope-bound declassification | arXiv [2608.01719](https://arxiv.org/abs/2608.01719v1) |
+| Multi-agent private communication | agents share beyond declared channel scope |
+| SocietyBench / ICLR multi-agent | norms must constrain coordination (prior) |
+
+**What fails:**
+
+1. Multi-agent channels declare a **scope** (team, private audience).
+2. Agents `share` / `export` / `declassify` / `publish` content to targets
+   **outside** that scope (or to `public` without a declassify grant).
+3. `gate_action` alone checks norm registry presence, not **scope ⊆ declared**.
+
+**Product in this repo:**
+
+| Control | API |
+|---------|-----|
+| Cross-scope classifier | `is_cross_scope_action` / `DEFAULT_CROSS_SCOPE_ACTIONS` |
+| Scope gate | `gate_scope(action, declared_scope=…, target_scope=…)` |
+| Declassify grant | `allow_declassify=True` required to widen classification |
+| Raise form | `assert_in_scope(...)` |
+
+**Rules (load-bearing):**
+
+- Empty declared scope → **FAIL_LOUD**
+- target ∉ declared → **FAIL** (`out_of_scope`)
+- declassify/reveal private without grant → **FAIL**
+- private→public share without grant → **FAIL**
+
+**Tests:** `tests/test_scope_bound.py`
+
+**Non-Ornament:** Call `gate_scope` **before** any multi-agent share/export.
+Pair with `gate_action` for high-risk empty-norm refuse and
+`humanproof.gate_approval` for owner tokens.
+
 ## Related queue IDs
 
 - **NORM-ENFORCE** — this case (P2)
+- **SCOPE-BOUND** — MNC declassification (this section)
 - **APPROVAL-GATE** (humanproof) — owner token for high-risk
 - **CONST-AS-STATE** (agentcrdt) — refuse non-world state
 - **POLICY-ARBITRATION** (rulegraph) — COI / endorse rules
+- **MAST-MULTI** (agentcrdt) — multi-agent silent divergence

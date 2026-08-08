@@ -5,11 +5,15 @@ from __future__ import annotations
 from importlib.metadata import version as _version
 
 from normsync.closed_loop import (
+    DEFAULT_CROSS_SCOPE_ACTIONS,
     ClosedLoopError,
     GateOutcome,
     assert_action_allowed,
+    assert_in_scope,
     gate_action,
     gate_actions,
+    gate_scope,
+    is_cross_scope_action,
     is_high_risk_action,
 )
 from normsync.compliance import AgentCompliance, agent_compliance_report, fleet_compliance_report
@@ -25,6 +29,7 @@ __all__ = [
     "AgentAction",
     "AgentCompliance",
     "ClosedLoopError",
+    "DEFAULT_CROSS_SCOPE_ACTIONS",
     "GateOutcome",
     "NormConflict",
     "NormMonitor",
@@ -36,10 +41,13 @@ __all__ = [
     "WorldNorm",
     "agent_compliance_report",
     "assert_action_allowed",
+    "assert_in_scope",
     "detect_norm_conflicts",
     "fleet_compliance_report",
     "gate_action",
     "gate_actions",
+    "gate_scope",
+    "is_cross_scope_action",
     "is_high_risk_action",
     "print_violations",
     "to_json",
