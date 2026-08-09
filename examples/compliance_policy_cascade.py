@@ -32,15 +32,14 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
+from normsync.compliance import fleet_compliance_report
+from normsync.conflicts import detect_norm_conflicts
 from normsync.monitor import NormMonitor
 from normsync.norm import AgentAction, NormViolation, WorldNorm
 from normsync.store import NormStore
 from normsync.versioning import NormVersionStore
-from normsync.conflicts import detect_norm_conflicts, NormConflict
-from normsync.compliance import fleet_compliance_report, AgentCompliance
-
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -184,7 +183,6 @@ def build_actions() -> list[SimAction]:
       4 clean. The same financial-data-in-prompt actions that were allowed in
       Phase 1 are now blocked.
     """
-    t = BASE_TIMESTAMP
     actions: list[SimAction] = [
 
         # ── Phase 1: pre-update ────────────────────────────────────────────────
@@ -362,7 +360,7 @@ def main() -> None:
     print()
     hr("═")
     print("  CLEARPATH FINANCIAL — GDPR POLICY CASCADE REPORT")
-    print(f"  Fleet: 5 fintech agents | Engine: normsync")
+    print("  Fleet: 5 fintech agents | Engine: normsync")
     hr("═")
 
     # ── [1/4] Load initial compliance norms ───────────────────────────────────
@@ -482,7 +480,7 @@ def main() -> None:
     post_viols = [v for _, vs, ph in timeline if ph == "POST" for v in vs]
 
     print()
-    print(f"  GDPR CASCADE SUMMARY:")
+    print("  GDPR CASCADE SUMMARY:")
     print(f"    Agents in fleet:           {len(AGENTS)}")
     print(f"    Total actions checked:     {len(sim_actions)}")
     print(f"    Pre-update violations:     {len(pre_viols)}")

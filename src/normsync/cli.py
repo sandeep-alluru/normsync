@@ -23,7 +23,7 @@ console = Console()
 @click.group()
 @click.version_option()
 def main() -> None:
-    """normsync — World constitution engine for norm-governed agents."""
+    """normsync - World constitution engine for norm-governed agents."""
 
 
 @main.command("add")

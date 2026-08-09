@@ -1,7 +1,7 @@
-"""NORM-ENFORCE — unattended high-risk actions require active norms.
+"""NORM-ENFORCE - unattended high-risk actions require active norms.
 
 Farm: unattended post without governing norm.
-Public: multi-agent coordination / ICLR failures — norms must constrain actions.
+Public: multi-agent coordination / ICLR failures - norms must constrain actions.
 """
 
 from __future__ import annotations
@@ -120,7 +120,7 @@ def test_auto_post_unattended_violates_norm() -> None:
 
 
 def test_assert_action_allowed_raises() -> None:
-    with pytest.raises(ClosedLoopError, match="FAIL_LOUD|NORM-ENFORCE"):
+    with pytest.raises(ClosedLoopError, match=r"FAIL_LOUD|NORM-ENFORCE"):
         assert_action_allowed("publish", norms=[])
 
 

@@ -1,4 +1,4 @@
-"""Norm versioning — track the full history of norm changes."""
+"""Norm versioning - track the full history of norm changes."""
 
 from __future__ import annotations
 

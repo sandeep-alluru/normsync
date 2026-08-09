@@ -155,7 +155,7 @@ class TestCliConflicts:
         assert result.exit_code == 0
 
     def test_conflicts_detects_conflict(self, runner, tmp_db):
-        # Two norms with same priority and overlapping condition — priority ambiguity
+        # Two norms with same priority and overlapping condition - priority ambiguity
         runner.invoke(
             main,
             [

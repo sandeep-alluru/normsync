@@ -103,7 +103,7 @@ def test_diff_versions_no_changes():
     norm = make_norm()
     store.save_norm(norm)
     version_store.record_change(norm, "admin", "First")
-    version_store.record_change(norm, "admin", "Second — same snapshot")
+    version_store.record_change(norm, "admin", "Second - same snapshot")
     diff = version_store.diff_versions("no_attack", 1, 2)
-    # id field will differ (since it's the same norm) — actually all fields are identical
+    # id field will differ (since it's the same norm) - actually all fields are identical
     assert isinstance(diff, dict)

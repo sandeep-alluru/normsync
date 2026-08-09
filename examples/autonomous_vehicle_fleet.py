@@ -19,12 +19,11 @@ from __future__ import annotations
 import random
 import time
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from normsync.monitor import NormMonitor
 from normsync.norm import AgentAction, NormViolation, WorldNorm
 from normsync.store import NormStore
-
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -221,7 +220,7 @@ def simulate_fleet_actions() -> list[AgentAction]:
     action_slot = 0
     for vehicle_cycle in range(ACTIONS_PER_VEHICLE):
         for vehicle in VEHICLES:
-            idx = vehicle_action_idx[vehicle]
+            vehicle_action_idx[vehicle]
             vehicle_action_idx[vehicle] += 1
 
             ts = BASE_TS + action_slot * interval
@@ -293,7 +292,7 @@ def main() -> None:
     print()
     hr("═")
     print("  AUTONOMOUS DELIVERY FLEET — OPERATIONS GOVERNANCE REPORT")
-    print(f"  Fleet ID: NEXUS-DELIVERY | Window: 6-hour ops | Engine: normsync")
+    print("  Fleet ID: NEXUS-DELIVERY | Window: 6-hour ops | Engine: normsync")
     hr("═")
 
     print("\n[1/3] Loading traffic and safety norms …")
@@ -333,7 +332,7 @@ def main() -> None:
 
     compliance_rate = (len(actions) - len(all_violations)) / len(actions) * 100.0
 
-    print(f"\n[3/3] Generating operations report …")
+    print("\n[3/3] Generating operations report …")
     hr()
 
     print()
@@ -368,20 +367,20 @@ def main() -> None:
             print(f"  [EMERGENCY STOP] {esc.vehicle} @ {ts_to_clock(esc.timestamp)}")
             print(f"    Norm:    {esc.norm_name}")
             print(f"    Action:  {esc.description}")
-            print(f"    Action:  STOP signal sent to vehicle. Vehicle halted.")
-            print(f"             Ops center notified. Manual override required.")
+            print("    Action:  STOP signal sent to vehicle. Vehicle halted.")
+            print("             Ops center notified. Manual override required.")
             print()
         elif esc.level == ESCALATION_DISPATCH:
             print(f"  [DISPATCH ALERT] {esc.vehicle} @ {ts_to_clock(esc.timestamp)}")
             print(f"    Norm:    {esc.norm_name}")
             print(f"    Action:  {esc.description}")
-            print(f"    Action:  Dispatcher notified. Ground crew dispatched.")
+            print("    Action:  Dispatcher notified. Ground crew dispatched.")
             print()
         else:  # WARNING
             print(f"  [WARNING]        {esc.vehicle} @ {ts_to_clock(esc.timestamp)}")
             print(f"    Norm:    {esc.norm_name}")
             print(f"    Action:  {esc.description}")
-            print(f"    Action:  Warning logged. Driver coaching queued.")
+            print("    Action:  Warning logged. Driver coaching queued.")
             print()
 
     hr()

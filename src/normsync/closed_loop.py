@@ -1,7 +1,7 @@
 """Closed-loop action gate for normsync (NORM-ENFORCE + SCOPE-BOUND / MNC).
 
 Who reads the output?
-  Agent runtimes, publish loops, CI — anything that must *block* an action
+  Agent runtimes, publish loops, CI - anything that must *block* an action
   when norms forbid it or when the norm registry is empty (write-only ornament);
   multi-agent channels that must refuse out-of-scope declassification/export.
 
@@ -18,14 +18,15 @@ Farm case NORM-ENFORCE:
 
 Public map:
   * multi-agent coordination / ICLR multi-agent failures / SocietyBench
-  * MNC scope-bound semantic declassification (arXiv 2608.01719) — private
+  * MNC scope-bound semantic declassification (arXiv 2608.01719) - private
     agent communication must not leak outside declared scope
 """
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 from normsync.monitor import NormMonitor
 from normsync.norm import AgentAction, NormViolation, WorldNorm
@@ -71,7 +72,7 @@ DEFAULT_CROSS_SCOPE_ACTIONS: frozenset[str] = frozenset(
     }
 )
 
-# Classification ranks — higher is more public.
+# Classification ranks - higher is more public.
 _CLASS_RANK: dict[str, int] = {
     "secret": 0,
     "private": 1,
@@ -221,7 +222,7 @@ def gate_action(
         store: Optional NormStore for recording violations.
 
     Returns:
-        :class:`GateOutcome` — callers should refuse the side effect unless ``ok``.
+        :class:`GateOutcome` - callers should refuse the side effect unless ``ok``.
     """
     if isinstance(action, AgentAction):
         act = action
@@ -242,7 +243,7 @@ def gate_action(
 
     if not canon:
         return _fail_loud(
-            "empty action — refuse (NORM-ENFORCE)",
+            "empty action - refuse (NORM-ENFORCE)",
             action="",
             agent_id=act.agent_id,
             active_norm_count=n_active,
@@ -252,7 +253,7 @@ def gate_action(
     # NORM-ENFORCE: unattended high-risk with no live norms is ornament failure
     if require_norms_for_high_risk and high_risk and n_active == 0:
         return _fail_loud(
-            f"NORM-ENFORCE: high-risk action {canon!r} with zero active norms — "
+            f"NORM-ENFORCE: high-risk action {canon!r} with zero active norms - "
             f"unattended post/publish without governing norm (write-only registry)",
             action=canon,
             agent_id=act.agent_id,
@@ -270,8 +271,7 @@ def gate_action(
     if violations:
         names = sorted({v.norm_name for v in violations})
         return _fail(
-            f"NORM-ENFORCE: action {canon!r} violates {len(violations)} norm(s): "
-            f"{names}",
+            f"NORM-ENFORCE: action {canon!r} violates {len(violations)} norm(s): {names}",
             action=canon,
             agent_id=act.agent_id,
             active_norm_count=n_active,
@@ -318,7 +318,7 @@ def gate_actions(
 ) -> GateOutcome:
     """Gate a batch; first failure wins (FAIL/FAIL_LOUD). All PASS → PASS."""
     if not actions:
-        return _fail_loud("empty action batch — nothing to enforce")
+        return _fail_loud("empty action batch - nothing to enforce")
 
     last_ok: GateOutcome | None = None
     for act in actions:
@@ -340,7 +340,7 @@ def gate_actions(
 
 
 # ---------------------------------------------------------------------------
-# SCOPE-BOUND / MNC — refuse out-of-scope declassification & export
+# SCOPE-BOUND / MNC - refuse out-of-scope declassification & export
 # ---------------------------------------------------------------------------
 
 
@@ -412,7 +412,7 @@ def gate_scope(
 
     if not canon:
         return _fail_loud(
-            "SCOPE-BOUND/MNC: empty action — cannot gate phantom declassify",
+            "SCOPE-BOUND/MNC: empty action - cannot gate phantom declassify",
             action=None,
             high_risk=True,
             declared_scope=tuple(declared),
@@ -421,7 +421,7 @@ def gate_scope(
 
     if require_declared_scope and len(declared) == 0:
         return _fail_loud(
-            "SCOPE-BOUND/MNC: empty declared_scope — private agent channel "
+            "SCOPE-BOUND/MNC: empty declared_scope - private agent channel "
             "has no bound; cannot authorize share/export (arXiv 2608.01719)",
             action=canon,
             high_risk=True,
@@ -434,7 +434,7 @@ def gate_scope(
     if oos:
         return _fail(
             f"SCOPE-BOUND/MNC: target_scope {oos} outside declared_scope "
-            f"{declared} for action {canon!r} — refuse scope escape / leak",
+            f"{declared} for action {canon!r} - refuse scope escape / leak",
             action=canon,
             high_risk=True,
             declared_scope=tuple(declared),
@@ -459,7 +459,7 @@ def gate_scope(
         if canon in {"declassify", "reveal", "exfiltrate"} and src_rank < 3:
             return _fail(
                 f"SCOPE-BOUND/MNC: {canon!r} of classification={klass!r} "
-                f"without allow_declassify — refuse unauthorized declassification",
+                f"without allow_declassify - refuse unauthorized declassification",
                 action=canon,
                 high_risk=True,
                 declared_scope=tuple(declared),
@@ -469,7 +469,7 @@ def gate_scope(
             return _fail(
                 f"SCOPE-BOUND/MNC: {canon!r} moves {klass!r} content to "
                 f"public targets {sorted(public_targets)} without "
-                f"allow_declassify — refuse scope-bound leak",
+                f"allow_declassify - refuse scope-bound leak",
                 action=canon,
                 high_risk=True,
                 declared_scope=tuple(declared),

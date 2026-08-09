@@ -1,4 +1,4 @@
-"""normsync — World constitution engine for norm-governed multi-agent games."""
+"""normsync - World constitution engine for norm-governed multi-agent games."""
 
 from __future__ import annotations
 
@@ -26,10 +26,10 @@ from normsync.versioning import NormVersion, NormVersionStore
 
 __version__ = _version("normsync")
 __all__ = [
+    "DEFAULT_CROSS_SCOPE_ACTIONS",
     "AgentAction",
     "AgentCompliance",
     "ClosedLoopError",
-    "DEFAULT_CROSS_SCOPE_ACTIONS",
     "GateOutcome",
     "NormConflict",
     "NormMonitor",

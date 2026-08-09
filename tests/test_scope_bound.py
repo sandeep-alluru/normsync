@@ -1,4 +1,4 @@
-"""SCOPE-BOUND / MNC — out-of-scope declassification & export.
+"""SCOPE-BOUND / MNC - out-of-scope declassification & export.
 
 Public case (Track B 20260808T001238Z):
   arXiv 2608.01719 MNC: Scope-Bound Semantic Declassification for Private

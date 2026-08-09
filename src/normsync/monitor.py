@@ -24,7 +24,7 @@ class NormMonitor:
         # In-memory list of norms (norm list is fixed after construction)
         monitor = NormMonitor(norms=[...])
 
-        # Live NormStore — picks up norm changes automatically
+        # Live NormStore - picks up norm changes automatically
         monitor = NormMonitor(store)
     """
 

@@ -13,13 +13,11 @@ Run:
 """
 from __future__ import annotations
 
-import time
 from collections import defaultdict
 
 from normsync.monitor import NormMonitor
 from normsync.norm import AgentAction, NormRevision, NormViolation, WorldNorm
 from normsync.store import NormStore
-
 
 BASE_TS = 1_750_100_000.0    # battle start epoch
 BATTLE_DURATION_MIN = 15
@@ -350,7 +348,7 @@ def main() -> None:
     print()
     hr("═")
     print("  KINGDOMS OF AETHERMOOR — BATTLE INTEGRITY MONITOR")
-    print(f"  Match ID: BATTLE-2026-1234  |  Engine: normsync")
+    print("  Match ID: BATTLE-2026-1234  |  Engine: normsync")
     hr("═")
 
     print("\n[1/3] Loading faction rules …")
@@ -415,7 +413,7 @@ def main() -> None:
 
     print()
     print("  POST-MATCH INTEGRITY REPORT")
-    print(f"  Map: Ironkeep Valley | Duration: 15 min | Factions: Blue vs Red")
+    print("  Map: Ironkeep Valley | Duration: 15 min | Factions: Blue vs Red")
     print()
     print(f"  {len(actions):>4} actions checked")
     print(f"  {len(all_violations):>4} violation(s) detected")
@@ -466,7 +464,7 @@ def main() -> None:
         action_label = "AUTO-BAN" if agent in auto_banned_agents else "REVIEW"
         print(f"  • {agent}: {len(viols)} violation(s) [{names}] → {action_label}")
     print()
-    print(f"  Report submitted to game admin dashboard.")
+    print("  Report submitted to game admin dashboard.")
     print()
     hr("═")
 

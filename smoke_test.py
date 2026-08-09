@@ -53,7 +53,7 @@ def section(title: str) -> None:
     print(f"\n{BOLD}{title}{RESET}")
 
 
-def run(name: str, fn):  # noqa: ANN001
+def run(name: str, fn):
     try:
         fn()
         ok(name)
@@ -172,6 +172,7 @@ section("4. Report formatters")
 
 def _test_to_json_valid():
     import json
+
     from normsync.norm import WorldNorm
     from normsync.report import to_json
     norms = [WorldNorm("no-attack", "desc", "safe_zone", "attack")]
@@ -191,7 +192,9 @@ def _test_to_markdown_has_table():
 
 def _test_print_violations_outputs():
     import io
+
     from rich.console import Console
+
     from normsync.norm import NormViolation
     from normsync.report import print_violations
     violations = [NormViolation("n1", "no-attack", "a1", "agent1", "Violated")]
@@ -261,6 +264,7 @@ def _test_api_import():
 
 def _test_api_health():
     from fastapi.testclient import TestClient
+
     from normsync.api import app
     client = TestClient(app)
     r = client.get("/health")
@@ -269,8 +273,10 @@ def _test_api_health():
     assert "version" in r.json()
 
 def _test_api_post_norm():
-    from fastapi.testclient import TestClient
     import importlib
+
+    from fastapi.testclient import TestClient
+
     import normsync.api as api_module
     importlib.reload(api_module)
     from normsync.api import app
@@ -285,8 +291,10 @@ def _test_api_post_norm():
     assert "id" in r.json()
 
 def _test_api_check_violation():
-    from fastapi.testclient import TestClient
     import importlib
+
+    from fastapi.testclient import TestClient
+
     import normsync.api as api_module
     importlib.reload(api_module)
     from normsync.api import app
@@ -323,7 +331,6 @@ def _test_mcp_server_loads_cleanly():
     import normsync.mcp_server  # noqa: F401
 
 def _test_mcp_server_has_tools():
-    import ast
     import normsync.mcp_server as m
     src = open(m.__file__).read()
     assert "add_norm" in src
@@ -378,7 +385,7 @@ run("CODEX.md exists and non-empty", lambda: _check_file_nonempty("CODEX.md"))
 run(".github/copilot-instructions.md exists", lambda: _check_file_nonempty(".github/copilot-instructions.md"))
 def _test_cursor_rules():
     mdc_files = list((REPO_ROOT / ".cursor/rules").glob("*.mdc"))
-    assert len(mdc_files) >= 1, f"Expected ≥1 .mdc file in .cursor/rules/, found none"
+    assert len(mdc_files) >= 1, "Expected ≥1 .mdc file in .cursor/rules/, found none"
 
 run(".cursor/rules/ has at least one .mdc file", _test_cursor_rules)
 run(".windsurfrules exists", lambda: _check_file_nonempty(".windsurfrules"))

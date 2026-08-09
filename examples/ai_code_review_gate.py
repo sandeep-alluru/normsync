@@ -26,7 +26,6 @@ from normsync.norm import AgentAction, NormViolation, WorldNorm
 from normsync.report import print_violations, to_json
 from normsync.store import NormStore
 
-
 # ── Engineering norms ─────────────────────────────────────────────────────────
 
 CODING_NORMS: list[WorldNorm] = [
@@ -222,7 +221,7 @@ def main() -> None:
     blocked        = len(blocked_prs)
     violation_rate = (blocked / total_prs * 100) if total_prs else 0.0
 
-    print(f"Gate results:\n")
+    print("Gate results:\n")
     print(f"  PRs checked          : {total_prs}")
     print(f"  PRs blocked          : {blocked}  ({violation_rate:.0f}%)")
     print(f"  Total violations     : {len(all_violations)}")
