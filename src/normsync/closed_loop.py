@@ -1,9 +1,10 @@
-"""Closed-loop action gate for normsync (NORM-ENFORCE + SCOPE-BOUND / MNC).
+"""Closed-loop action gate for normsync (NORM-ENFORCE + SCOPE-BOUND + RULE-INTENSIVE).
 
 Who reads the output?
   Agent runtimes, publish loops, CI - anything that must *block* an action
   when norms forbid it or when the norm registry is empty (write-only ornament);
-  multi-agent channels that must refuse out-of-scope declassification/export.
+  multi-agent channels that must refuse out-of-scope declassification/export;
+  rule-intensive document reviewers that must refuse approve without taxonomy coverage.
 
 What outcome changes?
   High-risk unattended actions (e.g. ``post``) without active norms → FAIL_LOUD.
@@ -11,6 +12,8 @@ What outcome changes?
   Allowed actions with a live norm set → PASS.
   Export/share targets outside declared scope → FAIL (MNC SCOPE-BOUND).
   Empty declared scope → FAIL_LOUD.
+  Document review "approved" without hierarchical taxonomy coverage → FAIL_LOUD/FAIL
+  (RULE-INTENSIVE / GB/T-Bench class).
 
 Farm case NORM-ENFORCE:
   Unattended post without a governing norm. A norm store that is never checked
@@ -20,6 +23,9 @@ Public map:
   * multi-agent coordination / ICLR multi-agent failures / SocietyBench
   * MNC scope-bound semantic declassification (arXiv 2608.01719) - private
     agent communication must not leak outside declared scope
+  * Rule-intensive national-standard review (arXiv 2608.06312 GB/T-Bench) -
+    hierarchical schema: structure, scope, normative modality, terminology,
+    cross-section consistency
 """
 
 from __future__ import annotations
@@ -91,7 +97,7 @@ class ClosedLoopError(ValueError):
 
 @dataclass(frozen=True)
 class GateOutcome:
-    """Result of gating an agent action against norms or scope bounds.
+    """Result of gating an agent action against norms, scope, or rule-review.
 
     Attributes:
         ok: True only when the action may proceed.
@@ -108,6 +114,9 @@ class GateOutcome:
         declared_scope: Scope labels when scope-gated.
         target_scope: Target scope labels when scope-gated.
         out_of_scope: Targets outside declared scope.
+        covered_dimensions: Rule-review taxonomy dimensions covered.
+        missing_dimensions: Required taxonomy dimensions not covered.
+        critical_finding_count: Unresolved critical review findings.
     """
 
     ok: bool
@@ -124,6 +133,9 @@ class GateOutcome:
     declared_scope: tuple[str, ...] = ()
     target_scope: tuple[str, ...] = ()
     out_of_scope: tuple[str, ...] = ()
+    covered_dimensions: tuple[str, ...] = ()
+    missing_dimensions: tuple[str, ...] = ()
+    critical_finding_count: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -141,6 +153,9 @@ class GateOutcome:
             "declared_scope": list(self.declared_scope),
             "target_scope": list(self.target_scope),
             "out_of_scope": list(self.out_of_scope),
+            "covered_dimensions": list(self.covered_dimensions),
+            "missing_dimensions": list(self.missing_dimensions),
+            "critical_finding_count": self.critical_finding_count,
         }
 
 
@@ -501,6 +516,369 @@ def assert_in_scope(
 ) -> GateOutcome:
     """Raise :class:`ClosedLoopError` unless :func:`gate_scope` is ok."""
     outcome = gate_scope(action, **kwargs)
+    if not outcome.ok:
+        raise ClosedLoopError(f"{outcome.verdict}: {outcome.reason}")
+    return outcome
+
+
+# ---------------------------------------------------------------------------
+# RULE-INTENSIVE / GB/T-Bench - hierarchical document review taxonomy
+# Public: arXiv 2608.06312 Benchmarking LLMs for Rule-Intensive Review
+# ---------------------------------------------------------------------------
+
+# GB/T Review Taxonomy (hierarchical schema from the paper).
+DEFAULT_RULE_REVIEW_DIMENSIONS: frozenset[str] = frozenset(
+    {
+        "document_structure",
+        "scope_alignment",
+        "normative_modality",
+        "terminology_consistency",
+        "cross_section_consistency",
+    }
+)
+
+# Severities that block approve when unresolved.
+CRITICAL_REVIEW_SEVERITIES: frozenset[str] = frozenset(
+    {
+        "critical",
+        "blocker",
+        "error",
+        "high",
+        "major",
+    }
+)
+
+# Normative wording ranks (ISO/IEC-style modality).
+_MODALITY_RANK: dict[str, int] = {
+    "shall": 3,
+    "must": 3,
+    "required": 3,
+    "should": 2,
+    "recommended": 2,
+    "may": 1,
+    "optional": 1,
+    "can": 1,
+    "might": 0,
+}
+
+
+def _canon_dimension(label: str) -> str:
+    return (label or "").strip().lower().replace(" ", "_").replace("-", "_")
+
+
+def _finding_map(item: Any) -> dict[str, Any]:
+    """Normalize a review finding to a plain dict."""
+    if isinstance(item, dict):
+        return dict(item)
+    if hasattr(item, "to_dict") and callable(item.to_dict):
+        return dict(item.to_dict())
+    # dataclass / namespace
+    out: dict[str, Any] = {}
+    for key in (
+        "id",
+        "dimension",
+        "category",
+        "taxonomy",
+        "severity",
+        "message",
+        "description",
+        "resolved",
+        "modality",
+        "expected_modality",
+        "actual_modality",
+    ):
+        if hasattr(item, key):
+            out[key] = getattr(item, key)
+    return out
+
+
+def _finding_dimension(f: dict[str, Any]) -> str:
+    for key in ("dimension", "category", "taxonomy"):
+        raw = f.get(key)
+        if raw:
+            return _canon_dimension(str(raw))
+    return ""
+
+
+def _finding_severity(f: dict[str, Any]) -> str:
+    return _canon_dimension(str(f.get("severity") or "info"))
+
+
+def _finding_resolved(f: dict[str, Any], resolved_ids: set[str]) -> bool:
+    if f.get("resolved") is True:
+        return True
+    fid = str(f.get("id") or "")
+    return bool(fid and fid in resolved_ids)
+
+
+def _modality_weakened(expected: str, actual: str) -> bool:
+    """True when actual modality is weaker than expected (shall→may etc.)."""
+    e = _canon_dimension(expected)
+    a = _canon_dimension(actual)
+    if not e or not a:
+        return False
+    er = _MODALITY_RANK.get(e)
+    ar = _MODALITY_RANK.get(a)
+    if er is None or ar is None:
+        return False
+    return ar < er
+
+
+def is_rule_review_dimension(label: str) -> bool:
+    """True if *label* is a known GB/T-Bench taxonomy dimension (or alias)."""
+    d = _canon_dimension(label)
+    if d in DEFAULT_RULE_REVIEW_DIMENSIONS:
+        return True
+    aliases = {
+        "structure": "document_structure",
+        "scope": "scope_alignment",
+        "modality": "normative_modality",
+        "terminology": "terminology_consistency",
+        "cross_section": "cross_section_consistency",
+        "consistency": "cross_section_consistency",
+    }
+    return aliases.get(d) in DEFAULT_RULE_REVIEW_DIMENSIONS
+
+
+def analyze_rule_review(
+    findings: Sequence[Any] | None = None,
+    *,
+    dimensions_checked: Sequence[str] | str | None = None,
+    required_dimensions: Sequence[str] | None = None,
+    resolved_ids: Sequence[str] | None = None,
+) -> dict[str, Any]:
+    """Summarize hierarchical rule-intensive review coverage and blockers.
+
+    Public case: arXiv 2608.06312 GB/T-Bench — structured review of national
+    standard documents across a hierarchical taxonomy (structure, scope,
+    normative modality, terminology, cross-section consistency).
+
+    Returns a dict with covered/missing dimensions, critical findings, and
+    modality weakenings. Does not gate; use :func:`gate_rule_review`.
+    """
+    required = [
+        _canon_dimension(x)
+        for x in (required_dimensions or sorted(DEFAULT_RULE_REVIEW_DIMENSIONS))
+        if _canon_dimension(x)
+    ]
+    resolved_set = {str(x) for x in (resolved_ids or []) if str(x)}
+
+    checked: list[str] = []
+    seen: set[str] = set()
+    if dimensions_checked is not None:
+        labels = (
+            [dimensions_checked]
+            if isinstance(dimensions_checked, str)
+            else list(dimensions_checked)
+        )
+        for lab in labels:
+            d = _canon_dimension(str(lab))
+            if d and d not in seen:
+                seen.add(d)
+                checked.append(d)
+
+    findings_list = [_finding_map(f) for f in (findings or [])]
+    for f in findings_list:
+        d = _finding_dimension(f)
+        if d and d not in seen:
+            seen.add(d)
+            checked.append(d)
+
+    missing = [d for d in required if d not in seen]
+
+    critical: list[dict[str, Any]] = []
+    modality_weakenings: list[dict[str, Any]] = []
+    for f in findings_list:
+        if _finding_resolved(f, resolved_set):
+            continue
+        sev = _finding_severity(f)
+        if sev in CRITICAL_REVIEW_SEVERITIES:
+            critical.append(f)
+        exp = str(f.get("expected_modality") or "")
+        act = str(f.get("actual_modality") or f.get("modality") or "")
+        if exp and act and _modality_weakened(exp, act):
+            modality_weakenings.append(f)
+
+    return {
+        "required_dimensions": required,
+        "covered_dimensions": checked,
+        "missing_dimensions": missing,
+        "finding_count": len(findings_list),
+        "critical_finding_count": len(critical),
+        "critical_findings": critical,
+        "modality_weakening_count": len(modality_weakenings),
+        "modality_weakenings": modality_weakenings,
+        "full_taxonomy": len(missing) == 0 and len(required) > 0,
+    }
+
+
+def gate_rule_review(
+    findings: Sequence[Any] | None = None,
+    *,
+    dimensions_checked: Sequence[str] | str | None = None,
+    required_dimensions: Sequence[str] | None = None,
+    claim_approved: bool = False,
+    claim_complete: bool = False,
+    max_unresolved_critical: int = 0,
+    require_full_taxonomy: bool = True,
+    resolved_ids: Sequence[str] | None = None,
+    refuse_modality_weakening: bool = True,
+) -> GateOutcome:
+    """Refuse approve/complete of rule-intensive reviews without taxonomy coverage.
+
+    Public case: arXiv 2608.06312 *Benchmarking and Enhancing LLMs for
+    Rule-Intensive Review of National Standard Documents* (GB/T-Bench).
+    LLM reviewers that score only domain Q&A or claim "approved" without
+    hierarchical checks (structure, scope alignment, normative modality,
+    terminology consistency, cross-section consistency) are ornament.
+
+    Rules:
+
+    1. ``claim_approved`` or ``claim_complete`` with **zero** dimensions
+       checked → **FAIL_LOUD** (phantom complete review).
+    2. Required taxonomy dimensions missing → **FAIL** when
+       ``require_full_taxonomy`` (default).
+    3. Unresolved critical/major findings above
+       ``max_unresolved_critical`` → **FAIL**.
+    4. Normative modality weakened (shall→may etc.) → **FAIL** when
+       ``refuse_modality_weakening``.
+    5. Full taxonomy + no blocking findings → **PASS**.
+
+    Args:
+        findings: Review findings (dicts or objects with dimension/severity).
+        dimensions_checked: Explicit taxonomy dimensions the reviewer covered.
+        required_dimensions: Override default GB/T hierarchy.
+        claim_approved: Reviewer claims the document is approved.
+        claim_complete: Reviewer claims the review is complete.
+        max_unresolved_critical: Max open critical/major findings allowed.
+        require_full_taxonomy: Missing dimensions → FAIL.
+        resolved_ids: Finding ids already fixed.
+        refuse_modality_weakening: shall/must weakened to may/should → FAIL.
+    """
+    summary = analyze_rule_review(
+        findings,
+        dimensions_checked=dimensions_checked,
+        required_dimensions=required_dimensions,
+        resolved_ids=resolved_ids,
+    )
+    covered = tuple(summary["covered_dimensions"])
+    missing = tuple(summary["missing_dimensions"])
+    n_crit = int(summary["critical_finding_count"])
+    crit_payloads = tuple(summary["critical_findings"])
+    weak = tuple(summary["modality_weakenings"])
+    claiming = claim_approved or claim_complete
+    action = "approve_review" if claim_approved else (
+        "complete_review" if claim_complete else "rule_review"
+    )
+
+    if claiming and len(covered) == 0:
+        return _fail_loud(
+            "RULE-INTENSIVE/GB-T: claim_approved/complete with zero taxonomy "
+            "dimensions checked - phantom rule-intensive review "
+            "(arXiv 2608.06312); refuse approve without hierarchical coverage",
+            action=action,
+            high_risk=True,
+            covered_dimensions=(),
+            missing_dimensions=missing,
+            critical_finding_count=n_crit,
+            violation_count=0,
+            violations=(),
+        )
+
+    if require_full_taxonomy and missing and claiming:
+        return _fail(
+            f"RULE-INTENSIVE/GB-T: incomplete hierarchical review - missing "
+            f"dimensions {list(missing)}; required full taxonomy "
+            f"{summary['required_dimensions']} (arXiv 2608.06312)",
+            action=action,
+            high_risk=True,
+            covered_dimensions=covered,
+            missing_dimensions=missing,
+            critical_finding_count=n_crit,
+            violation_count=len(missing),
+            violations=tuple(
+                {"kind": "missing_dimension", "dimension": d} for d in missing
+            ),
+        )
+
+    if n_crit > max_unresolved_critical and claiming:
+        return _fail(
+            f"RULE-INTENSIVE/GB-T: {n_crit} unresolved critical/major "
+            f"finding(s) exceed max={max_unresolved_critical} - refuse approve",
+            action=action,
+            high_risk=True,
+            covered_dimensions=covered,
+            missing_dimensions=missing,
+            critical_finding_count=n_crit,
+            violation_count=n_crit,
+            violations=crit_payloads,
+        )
+
+    if refuse_modality_weakening and weak and claiming:
+        return _fail(
+            f"RULE-INTENSIVE/GB-T: {len(weak)} normative modality weakening(s) "
+            f"(shall/must→weaker wording) - refuse approve",
+            action=action,
+            high_risk=True,
+            covered_dimensions=covered,
+            missing_dimensions=missing,
+            critical_finding_count=n_crit,
+            violation_count=len(weak),
+            violations=weak,
+        )
+
+    # Non-claiming analysis path: still FAIL_LOUD if nothing to inspect at all
+    if not claiming and len(covered) == 0 and not findings:
+        return _fail_loud(
+            "RULE-INTENSIVE/GB-T: empty review - no dimensions and no findings",
+            action=action,
+            high_risk=True,
+            covered_dimensions=(),
+            missing_dimensions=missing,
+        )
+
+    # When not claiming approve, missing taxonomy is advisory only (PASS with note)
+    # unless require_full_taxonomy and we treat finalize-like analysis.
+    if require_full_taxonomy and missing and not claiming:
+        # still surface incompleteness as FAIL so CI can block "ready" flags
+        return _fail(
+            f"RULE-INTENSIVE/GB-T: taxonomy incomplete - missing {list(missing)}",
+            action=action,
+            high_risk=False,
+            covered_dimensions=covered,
+            missing_dimensions=missing,
+            critical_finding_count=n_crit,
+            violation_count=len(missing),
+            violations=tuple(
+                {"kind": "missing_dimension", "dimension": d} for d in missing
+            ),
+        )
+
+    return GateOutcome(
+        ok=True,
+        verdict="PASS",
+        reason=(
+            f"RULE-INTENSIVE ok: taxonomy covered={list(covered)} "
+            f"critical={n_crit} claim_approved={claim_approved}"
+        ),
+        exit_code=0,
+        action=action,
+        human_required=False,
+        high_risk=claiming,
+        covered_dimensions=covered,
+        missing_dimensions=(),
+        critical_finding_count=n_crit,
+        violation_count=0,
+        violations=(),
+    )
+
+
+def assert_rule_review_ok(
+    findings: Sequence[Any] | None = None,
+    **kwargs: Any,
+) -> GateOutcome:
+    """Raise :class:`ClosedLoopError` unless :func:`gate_rule_review` is ok."""
+    outcome = gate_rule_review(findings, **kwargs)
     if not outcome.ok:
         raise ClosedLoopError(f"{outcome.verdict}: {outcome.reason}")
     return outcome

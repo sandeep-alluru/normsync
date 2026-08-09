@@ -81,10 +81,57 @@ CLOSED_LOOP: write-only norm store without check path is ornament.
 Pair with `gate_action` for high-risk empty-norm refuse and
 `humanproof.gate_approval` for owner tokens.
 
+---
+
+## Case RULE-INTENSIVE — GB/T hierarchical document review
+
+**Source:** Track B research (`20260809T201218Z`):
+
+| Case | Link |
+|------|------|
+| Rule-intensive national standard review | arXiv [2608.06312](https://arxiv.org/abs/2608.06312v1) |
+| GB/T-Bench hierarchical taxonomy | structure, scope, modality, terminology, cross-section |
+| Domain Q&A-only evals | miss intrinsic quality review (paper gap) |
+
+**What fails:**
+
+1. LLM agents “review” long structured standards with only domain Q&A scores.
+2. Reviewers claim **approved** / **complete** without hierarchical taxonomy
+   coverage (document structure, scope alignment, normative modality,
+   terminology consistency, cross-section consistency).
+3. Unresolved critical findings or shall→may modality weakenings still ship
+   as green review.
+4. `gate_action` / `gate_scope` alone do not encode **document rule taxonomy**.
+
+**Product in this repo:**
+
+| Control | API |
+|---------|-----|
+| Taxonomy constants | `DEFAULT_RULE_REVIEW_DIMENSIONS`, `CRITICAL_REVIEW_SEVERITIES` |
+| Analyzer | `analyze_rule_review(findings, dimensions_checked=…)` |
+| Review gate | `gate_rule_review(..., claim_approved=…)` |
+| Raise form | `assert_rule_review_ok(...)` |
+| Dimension helper | `is_rule_review_dimension` |
+
+**Rules (load-bearing):**
+
+- claim approve/complete + zero dimensions checked → **FAIL_LOUD**
+- missing required taxonomy dimensions → **FAIL**
+- unresolved critical/major findings above budget → **FAIL**
+- normative modality weakening (shall/must → may/should) → **FAIL**
+- full taxonomy + no blockers → **PASS**
+
+**Tests:** `tests/test_rule_intensive.py`
+
+**Non-Ornament:** Call `gate_rule_review` **before** accepting a document
+approve/complete decision. Pair with `gate_action` for side-effect norms and
+`gate_scope` when review outputs are shared across agents.
+
 ## Related queue IDs
 
-- **NORM-ENFORCE** — this case (P2)
-- **SCOPE-BOUND** — MNC declassification (this section)
+- **NORM-ENFORCE** — unattended post without norms
+- **SCOPE-BOUND** — MNC declassification
+- **RULE-INTENSIVE** — GB/T hierarchical review (this section)
 - **APPROVAL-GATE** (humanproof) — owner token for high-risk
 - **CONST-AS-STATE** (agentcrdt) — refuse non-world state
 - **POLICY-ARBITRATION** (rulegraph) — COI / endorse rules
