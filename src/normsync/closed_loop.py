@@ -767,8 +767,10 @@ def gate_rule_review(
     crit_payloads = tuple(summary["critical_findings"])
     weak = tuple(summary["modality_weakenings"])
     claiming = claim_approved or claim_complete
-    action = "approve_review" if claim_approved else (
-        "complete_review" if claim_complete else "rule_review"
+    action = (
+        "approve_review"
+        if claim_approved
+        else ("complete_review" if claim_complete else "rule_review")
     )
 
     if claiming and len(covered) == 0:
@@ -796,9 +798,7 @@ def gate_rule_review(
             missing_dimensions=missing,
             critical_finding_count=n_crit,
             violation_count=len(missing),
-            violations=tuple(
-                {"kind": "missing_dimension", "dimension": d} for d in missing
-            ),
+            violations=tuple({"kind": "missing_dimension", "dimension": d} for d in missing),
         )
 
     if n_crit > max_unresolved_critical and claiming:
@@ -849,9 +849,7 @@ def gate_rule_review(
             missing_dimensions=missing,
             critical_finding_count=n_crit,
             violation_count=len(missing),
-            violations=tuple(
-                {"kind": "missing_dimension", "dimension": d} for d in missing
-            ),
+            violations=tuple({"kind": "missing_dimension", "dimension": d} for d in missing),
         )
 
     return GateOutcome(
