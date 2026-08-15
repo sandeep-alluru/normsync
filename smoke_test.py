@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -36,6 +37,12 @@ PYTHON = sys.executable
 passed: list[str] = []
 failed: list[tuple[str, str]] = []
 
+
+
+def _secure_tmp(suffix: str = ".tmp") -> str:
+    fd, name = tempfile.mkstemp(suffix=suffix)
+    os.close(fd)
+    return name
 
 def ok(name: str) -> None:
     passed.append(name)
@@ -226,7 +233,7 @@ def _test_cli_add():
     r = subprocess.run(
         [PYTHON, "-m", "normsync.cli", "add",
          "test-norm", "desc", "safe_zone", "attack",
-         "--db", str(tempfile.mktemp(suffix=".db"))],
+         "--db", _secure_tmp(suffix=".db")],
         capture_output=True, text=True
     )
     assert r.returncode == 0
