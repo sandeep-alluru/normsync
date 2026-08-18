@@ -57,7 +57,9 @@ def run_server() -> None:
         return [
             _mcp_types.Tool(
                 name="add_norm",
-                description="Add a normative rule to the world constitution",
+                description=(
+                    "Register a governance norm/rule that agents must respect. Use when encoding policy constraints (allowed/forbidden actions). After adding norms, call check_action before the agent acts. Do not use to log violations — use list_violations."
+                ),
                 inputSchema={
                     "type": "object",
                     "properties": {
@@ -71,7 +73,9 @@ def run_server() -> None:
             ),
             _mcp_types.Tool(
                 name="check_action",
-                description="Check an agent action against active norms",
+                description=(
+                    "Check whether a proposed agent action violates registered norms. Use before executing risky actions. Returns allow/deny with reasons. Does not record a violation unless your client chooses to log one."
+                ),
                 inputSchema={
                     "type": "object",
                     "properties": {
@@ -84,7 +88,9 @@ def run_server() -> None:
             ),
             _mcp_types.Tool(
                 name="list_violations",
-                description="List all recorded norm violations",
+                description=(
+                    "List recorded norm violations. Use for compliance review after agent sessions. Read-only."
+                ),
                 inputSchema={"type": "object", "properties": {}},
             ),
         ]
